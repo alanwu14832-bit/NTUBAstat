@@ -67,3 +67,12 @@ Claude 會在 `supabase/migrations/` 多一個檔案並告訴你。到 Supabase 
 - Supabase、Cloudflare、GitHub：免費方案就夠
 - 網域：.com 約 NT$350／年（建議一次買 10 年）
 - 使用量變很大（資料庫 500 MB、每月流量 5 GB）時，Supabase 可隨時升級 Pro（US$25／月），資料不用搬
+
+## 網站版本（看舊版、退回舊版）
+- 網站每次上線，GitHub 會自動另外保存一份「只能瀏覽」的副本（`site-archive` 分支，保留最近 30 版）。網站左邊「網站版本」頁列出每一版的日期與更新內容，點「打開這一版」就能看，頁面上方會有黃色提示「你在看舊版網站」。
+- 舊版只能瀏覽：不能登入、紀錄或上傳；顯示的是現在的資料。
+- 保存需要 GitHub → Settings → Secrets and variables → Actions → **Variables** 有 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`（和每日備份用的一樣）；沒有的話 Actions 會出現黃色警告「這一版沒有保存」。
+- 剛上線的那一版要到下一次更新後才會出現在清單裡（它就是現在的網站）。
+- **真的要把網站退回某一版**（不只是看）：
+  1. 最快：Cloudflare → Workers & Pages → ntubastat → **Deployments** → 找到那個時間的版本 → **Rollback**。之後網站再更新時會自動換成新版。
+  2. 或請 Claude「把網站退回某日某時那一版」，它會把程式退回並重新上線。
