@@ -13,7 +13,7 @@
 | 網站 | Cloudflare 靜態託管、HTTPS、安全標頭（`web/public/_headers`） | 沒有自己的伺服器；禁止被別的網站嵌入（防點擊劫持）、HSTS、nosniff、Referrer／Permissions-Policy |
 | 腳本 | Content-Security-Policy（`web/src/config/security.ts`，建置時寫進 `index.html`） | 只執行本站自己的程式（禁止內嵌與注入的腳本、禁止 eval）；資料只能送往本站與自己的 Supabase 專案 |
 | 資料庫 | Supabase Postgres + Row Level Security | **任何人可讀**；**只有「已啟用的紀錄員帳號」可寫**（`is_editor()` 比對登入帳號本身，不只是 email） |
-| 帳號啟用 | `supabase/migrations/2026-10-08_security.sql` | 紀錄員名單上的 email 要用**邀請碼**（或寄到該信箱的驗證碼）啟用到一個帳號才能寫。光是用某人的 email 註冊帳號，什麼都寫不了 |
+| 帳號啟用 | `supabase/migrations/2026-10-08_security.sql` | 紀錄員名單上的 email 要用**邀請碼**啟用到一個帳號才能寫。光是用某人的 email 註冊帳號，什麼都寫不了 |
 | 邀請碼 | 10 碼、7 天有效、只存雜湊值 | 輸錯 10 次鎖住；用過即失效；紀錄員也讀不到；啟用時一併設定新密碼並登出其他裝置 |
 | 金鑰 | 前端只有 anon（publishable）key | 權限完全由 RLS 決定；匿名角色另外被收回所有寫入權；`service_role` key 永遠不放前端、不進 git（已掃過整個 git 歷史，沒有外洩） |
 | 個資 | 公開表格不存 email | `updated_by`／`created_by` 由資料庫自動填紀錄員名單上的備註名稱，舊資料裡的 email 已換掉 |
