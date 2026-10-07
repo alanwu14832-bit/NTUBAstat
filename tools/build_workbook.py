@@ -985,7 +985,9 @@ os.makedirs(os.path.dirname(OUT), exist_ok=True)
 wb.save(OUT)
 if BLANK:   # the data/*.json side files describe the sample build; leave them alone
     print("saved", OUT); sys.exit(0)
-json.dump(STAT_DICTIONARY, open(os.path.join(ROOT, "data", "stat_dictionary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+# the website's 數據字典 page reads its own copy
+for _p in (os.path.join(ROOT, "data", "stat_dictionary.json"), os.path.join(ROOT, "web", "src", "data", "seed", "stat_dictionary.json")):
+    json.dump(STAT_DICTIONARY, open(_p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 schema = {"batting_log": BAT_INPUT, "batting_auto": BAT_AUTO, "pitching_log": PIT_INPUT, "pitching_auto": PIT_AUTO, "fielding_log": FLD_INPUT,
           "games": GAME_COLS, "roster": ROSTER_COLS, "lists": LISTS, "pitch_slots": PITCH_N}
 json.dump(schema, open(os.path.join(ROOT, "data", "schema.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
