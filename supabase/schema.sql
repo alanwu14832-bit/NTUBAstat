@@ -54,6 +54,7 @@ create table if not exists batting_pa (
   cs            int not null default 0,
   adv_on_error  int not null default 0,
   out_on_base   int not null default 0,
+  baserunning_outs smallint not null default 0,  -- 壘死：自己跑壘失誤出局（out_on_base 的一部分）
   run           int not null default 0,
   rbi           int not null default 0,
   code          text,
@@ -467,4 +468,7 @@ end $$;
 revoke all on function admin_bind_editor(text, text) from public, anon, authenticated;
 
 -- 管理員的邀請碼：用在網站登入框的「第一次使用」（還沒啟用的紀錄員都會拿到一組新的，7 天內有效）
+-- 2026-10-09 壘死（舊資料庫補欄位；新建的已在上面）
+alter table batting_pa add column if not exists baserunning_outs smallint not null default 0;
+
 select email as 紀錄員, admin_issue_editor_code(email) as 邀請碼 from editors where user_id is null;
