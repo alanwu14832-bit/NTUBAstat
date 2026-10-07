@@ -3,7 +3,7 @@ name: 讓資料庫保持清醒
 # Supabase 免費方案連續 7 天沒人讀資料就會暫停（休賽季最常發生）。這裡每 3 天讀一筆資料，讓它不會睡著。
 # GitHub 會在公開 repo 60 天沒有更動後自動停用排程；所以每次執行也順手重新啟用自己和每週備份，避免休賽季失效。
 # 需要的設定：GitHub repo → Settings → Secrets and variables → Actions → Variables，
-#   VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY（和 Cloudflare Pages 填的一樣）。
+#   VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY（和 Cloudflare 填的一樣）。
 on:
   schedule:
     - cron: '17 3 */3 * *'

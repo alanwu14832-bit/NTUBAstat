@@ -18,13 +18,14 @@ docs/HANDOVER.md; keep those in step with what you change.
 - Team identity (name as written in games, display names, innings, file prefix) lives in `web/src/config/teamDefaults.ts`.
   Tests run as BaFiN with its 7 innings (`test.env` in `web/vite.config.ts`) because the fixtures are BaFiN's games.
 - Ship through a `claude/...` branch: `.github/workflows/auto-deploy.yml` runs tests + build and merges into `main`;
-  Cloudflare Pages deploys `main`. Run `npm test` and `npm run build` in `web/` before pushing.
+  Cloudflare deploys `main`. Run `npm test` and `npm run build` in `web/` before pushing.
 - Database change: add an idempotent `supabase/migrations/<yyyy-mm-dd>_<what>.sql`, apply the same change to
   `schema.sql`, and tell the maintainer to run the migration in Supabase → SQL Editor. The site must keep working before
   it is run (see how `runner` / `errors` / `day_roster` fall back and warn in `web/src/data/supabase.ts`).
 - Never put the Supabase service_role key (or any secret) in the site; everything the browser does uses the anon key and
   row-level security. Writes are allowed only for emails in `editors` (`is_editor()`).
-- Hosting is Cloudflare Pages (the maintainer is paid, so Vercel Hobby is not allowed). SPA routing works because
-  `web/public` has no `404.html`; do not add one.
+- Hosting is Cloudflare Workers static assets (`web/wrangler.jsonc`, root directory `web`, deploy command
+  `npx wrangler deploy`; the maintainer is paid, so Vercel Hobby is not allowed). SPA routing comes from
+  `not_found_handling: single-page-application`; do not add a `404.html`.
 - `record/sim.test.ts` plays 150 random games through the recording model: keep it green when touching recording or the
   runner timeline.

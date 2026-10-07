@@ -23,22 +23,24 @@
    - **Project URL**（`https://xxxx.supabase.co`）
    - **anon public** key（新版介面叫 publishable key，兩者都可以）
 
-## 2. 網站（Cloudflare Pages）
+## 2. 網站（Cloudflare Workers）
+
+Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都免費、都允許商業使用；這個 repo 用 Workers（設定在 `web/wrangler.jsonc`）。
 
 1. 到 [dash.cloudflare.com](https://dash.cloudflare.com) 用共用 Gmail 註冊並登入
-2. **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
+2. **Workers & Pages** → **Create** → **Import a repository**
    - 授權 GitHub 時用**維護者自己的 GitHub 帳號**登入，只勾選 `ntubastat` 這個 repo
-3. 建置設定：
+   - Project name 填 `ntubastat`（要和 `web/wrangler.jsonc` 的 `name` 一樣）
+3. 建置設定（建立後也可以在 **Settings** → **Build** → **Build configuration** 修改）：
 
    | 欄位 | 填 |
    |---|---|
-   | Production branch | `main` |
-   | Framework preset | `None` |
    | Build command | `npm run build` |
-   | Build output directory | `dist` |
-   | Root directory (advanced) | `web` |
+   | Deploy command | `npx wrangler deploy` |
+   | Root directory（Path） | `web` |
+   | Production branch | `main` |
 
-4. **Environment variables**（同一頁往下）：
+4. **Build variables**（同一頁往下，或 **Settings** → **Build** → **Variables and secrets**；要放在 Build 這一區，網站建置時才讀得到）：
 
    | 名稱 | 值 |
    |---|---|
@@ -46,22 +48,22 @@
    | `VITE_SUPABASE_ANON_KEY` | 第 1 步的 anon / publishable key |
    | `NODE_VERSION` | `22` |
 
-5. **Save and Deploy**。約兩分鐘後得到網址 `https://ntubastat.pages.dev`（名稱被用走時會多幾個字）。
+5. **Deploy**（之後改設定要到 **Deployments** 按 **Retry build**）。約兩分鐘後得到網址 `https://ntubastat.<你的帳號>.workers.dev`。
 
-> 有收費就是商業用途，Vercel 免費方案不能用；Cloudflare Pages 免費方案沒有這個限制。
+> 有收費就是商業用途，Vercel 免費方案不能用；Cloudflare 免費方案沒有這個限制。
 
 ## 3. 網址（選用，建議）
 
 1. Cloudflare 左側 **Domain Registration** → **Register Domains**，搜尋想要的名字
 2. 購買時年數選 **10 年**（之後不用管續約），自動續約也打開
-3. 回到 **Workers & Pages** → 這個專案 → **Custom domains** → **Set up a domain**，填剛買的網址，照指示確認
+3. 回到 **Workers & Pages** → 這個專案 → **Settings** → **Domains & Routes** → **Add** → **Custom domain**，填剛買的網址
 
 ## 4. 登入轉址（Supabase）
 
 **Authentication** → **URL Configuration**：
 
 - **Site URL**：網站網址（有買網域就填網域，例如 `https://ntubaseball.com`）
-- **Redirect URLs** 加上：`https://ntubastat.pages.dev/**`，有網域的話再加 `https://你的網域/**`
+- **Redirect URLs** 加上：`https://ntubastat.<你的帳號>.workers.dev/**`，有網域的話再加 `https://你的網域/**`
 
 ## 5. GitHub 自動化
 

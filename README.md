@@ -17,7 +17,7 @@
 |---|---|
 | 程式碼 | 這個 GitHub repo（`web/` 是網站） |
 | 資料庫 | Supabase 免費方案（`supabase/schema.sql`） |
-| 網站 | Cloudflare Pages，接這個 repo 的 `main` 自動更新 |
+| 網站 | Cloudflare Workers（`web/wrangler.jsonc`），接這個 repo 的 `main` 自動更新 |
 | 自動化 | `.github/workflows/`：測試通過自動上線、每 3 天讓資料庫保持清醒、每週備份 |
 
 ## 本機開發
