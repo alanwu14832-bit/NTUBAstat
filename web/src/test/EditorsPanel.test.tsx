@@ -1,59 +1,39 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
-import type { Editor } from '../data/editors'
+import type { User } from '@supabase/supabase-js'
 
-let rows: Editor[] = []
-const addEditor = vi.fn(async (email: string, note: string) => { rows = [...rows, { email, note, created_at: '2026-10-07T00:00:00Z' }] })
-const removeEditor = vi.fn(async (email: string) => { rows = rows.filter((r) => r.email !== email) })
+const future = new Date(Date.now() + 5 * 864e5).toISOString()
+let list = [
+  { email: 'me@team.tw', note: '管理員', created_at: '2026-01-01', user_id: 'u1', bound_at: '2026-01-02', invite_expires: null },
+  { email: 'wait@team.tw', note: null, created_at: '2026-02-01', user_id: null, bound_at: null, invite_expires: future },
+]
 vi.mock('../data/supabase', async (orig) => ({
   ...(await orig<typeof import('../data/supabase')>()),
-  listEditors: vi.fn(async () => rows),
-  addEditor: (email: string, note: string) => addEditor(email, note),
-  removeEditor: (email: string) => removeEditor(email),
+  listEditors: vi.fn(async () => list),
+  addEditor: vi.fn(async (email: string) => { list = [...list, { email, note: null, created_at: '2026-03-01', user_id: null, bound_at: null, invite_expires: future }]; return 'K7Q2M9XAPD' }),
+  resetEditor: vi.fn(async () => 'ZZZZZYYYYY'),
 }))
 const { EditorsPanel } = await import('../components/ui/EditorsPanel')
 const { useDataStore } = await import('../store/data')
 
-const signedIn = (isEditor: boolean) => useDataStore.setState({
-  cloud: { configured: true, status: 'ready', error: null, user: { id: 'u1', email: 'Coach@gmail.com' } as never, lastSync: null, pushing: false, isEditor },
-})
+describe('紀錄員名單 with 邀請碼', () => {
+  beforeEach(() => useDataStore.setState({ cloud: { ...useDataStore.getState().cloud, configured: true, user: { id: 'u1', email: 'me@team.tw' } as User, isEditor: true } }))
 
-describe('紀錄員名單', () => {
-  beforeEach(() => {
-    rows = [{ email: 'coach@gmail.com', note: '管理員', created_at: '2026-10-01T00:00:00Z' }, { email: 'old@gmail.com', note: null, created_at: '2026-10-02T00:00:00Z' }]
-    addEditor.mockClear(); removeEditor.mockClear()
-  })
-
-  it('is hidden from people who are not recorders', () => {
-    signedIn(false)
-    const { container } = render(<EditorsPanel />)
-    expect(container.textContent).toBe('')
-  })
-
-  it('lists recorders; you can remove others but not yourself', async () => {
-    signedIn(true)
+  it('shows who is activated and who is still waiting for their code', async () => {
     render(<EditorsPanel />)
-    expect(await screen.findByText('old@gmail.com')).toBeTruthy()
-    expect(screen.getByText('（你）')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: '移除 coach@gmail.com' })).toBeNull()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
-    fireEvent.click(screen.getByRole('button', { name: '移除 old@gmail.com' }))
-    expect(await screen.findByText('已移除 old@gmail.com')).toBeTruthy()
-    expect(removeEditor).toHaveBeenCalledWith('old@gmail.com')
+    expect(await screen.findByText('已啟用')).toBeTruthy()
+    expect(screen.getByText(/等待啟用/)).toBeTruthy()
+    // no 重發 for yourself
+    expect(screen.queryByRole('button', { name: '重發 me@team.tw 的邀請碼' })).toBeNull()
+    expect(screen.getByRole('button', { name: '重發 wait@team.tw 的邀請碼' })).toBeTruthy()
   })
 
-  it('adds a recorder by email, lower-cased, and refuses duplicates', async () => {
-    signedIn(true)
+  it('adding someone shows their one-time 邀請碼', async () => {
     render(<EditorsPanel />)
-    await screen.findByText('old@gmail.com')
-    fireEvent.change(screen.getByLabelText('新紀錄員 email'), { target: { value: 'OLD@gmail.com' } })
-    fireEvent.click(screen.getByRole('button', { name: '新增' }))
-    expect(screen.getByRole('status').textContent).toBe('這個 email 已經在名單裡')
-    expect(addEditor).not.toHaveBeenCalled()
-    fireEvent.change(screen.getByLabelText('新紀錄員 email'), { target: { value: ' New@Gmail.com ' } })
-    fireEvent.change(screen.getByLabelText('備註'), { target: { value: '大一' } })
-    fireEvent.click(screen.getByRole('button', { name: '新增' }))
-    expect(await screen.findByText('new@gmail.com')).toBeTruthy()
-    expect(addEditor).toHaveBeenCalledWith('new@gmail.com', '大一')
+    await screen.findAllByText('已啟用')
+    fireEvent.change(screen.getAllByLabelText('新紀錄員 email').at(-1)!, { target: { value: 'new@team.tw' } })
+    await act(async () => { fireEvent.click(screen.getAllByRole('button', { name: '新增' }).at(-1)!) })
+    expect(await screen.findByText('K7Q2M-9XAPD')).toBeTruthy()
+    expect(screen.getByText(/new@team.tw 的邀請碼/)).toBeTruthy()
   })
 })

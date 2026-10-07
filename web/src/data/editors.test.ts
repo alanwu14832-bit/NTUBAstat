@@ -16,8 +16,8 @@ describe('紀錄員名單', () => {
 
 describe('第一次使用：設定密碼', () => {
   it('needs 6 characters typed the same twice', () => {
-    expect(checkNewPassword('12345', '12345')).toBe('密碼至少 6 個字元')
-    expect(checkNewPassword('123456', '123457')).toBe('兩次輸入的密碼不一樣')
-    expect(checkNewPassword('123456', '123456')).toBeNull()
+    expect(checkNewPassword('1234567', '1234567')).toBe('密碼至少 8 個字元')
+    expect(checkNewPassword('12345678', '12345679')).toBe('兩次輸入的密碼不一樣')
+    expect(checkNewPassword('12345678', '12345678')).toBeNull()
   })
 })

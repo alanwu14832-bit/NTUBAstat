@@ -30,7 +30,10 @@ A database change needs a migration in both repos, and the user must run it in b
   `schema.sql`, and tell the maintainer to run the migration in Supabase → SQL Editor. The site must keep working before
   it is run (see how `runner` / `errors` / `day_roster` fall back and warn in `web/src/data/supabase.ts`).
 - Never put the Supabase service_role key (or any secret) in the site; everything the browser does uses the anon key and
-  row-level security. Writes are allowed only for emails in `editors` (`is_editor()`).
+  row-level security. Writes are allowed only for the account bound to an `editors` row (`is_editor()` checks
+  `user_id = auth.uid()`; binding is by 邀請碼, email code or the admin — see `supabase/migrations/2026-10-08_security.sql`
+  and docs/SECURITY.md). Never write an email into a public table (`updated_by`/`created_by` are stamped by a trigger),
+  and keep the Content-Security-Policy (`web/src/config/security.ts`) and `web/public/_headers` when adding features.
 - Hosting is Cloudflare Workers static assets (`web/wrangler.jsonc`, root directory `web`, deploy command
   `npx wrangler deploy`; the maintainer is paid, so Vercel Hobby is not allowed). SPA routing comes from
   `not_found_handling: single-page-application`; do not add a `404.html`.
