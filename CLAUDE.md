@@ -6,6 +6,13 @@ are not developers: talk to them in Traditional Chinese, plainly, and tell them 
 needs doing outside the code (Supabase, Cloudflare, GitHub settings). Setup and operations are in docs/SETUP.md and
 docs/HANDOVER.md; keep those in step with what you change.
 
+## Two sites, one change (the user's standing rule)
+The same code also runs NTU BaFiN 系隊's site, `alanwu14832-bit/bafinstat` (Vercel, its own Supabase).
+**Every feature, fix or layout change goes into both repos unless the user says only one.** Add the other repo to the
+session, port the change (`web/src` is shared code; team-specific parts are `web/src/config/teamDefaults.ts`, docs,
+hosting and workflows), run `npm test` in each `web/`, push each through its `claude/...` branch, and check both deploys.
+A database change needs a migration in both repos, and the user must run it in both Supabase projects — say so.
+
 ## Layout
 - `web/` — the site (Vite + React 19 + TypeScript + Tailwind 4 + zustand). `npm ci`, `npm test`, `npm run build` from `web/`.
 - `supabase/schema.sql` — the whole database, idempotent. `supabase/migrations/` — changes after the first setup.
