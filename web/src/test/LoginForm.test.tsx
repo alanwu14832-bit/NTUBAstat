@@ -6,7 +6,7 @@ const signUp = vi.fn(async (_email: string, _password: string) => {})
 const claim = vi.fn(async (code?: string) => (code?.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === 'K7Q2M9XAPD' ? 'ok' : 'bad_code'))
 vi.mock('../data/supabase', async (orig) => ({
   ...(await orig<typeof import('../data/supabase')>()),
-  sendMagicLink: vi.fn(), signInWithPassword: vi.fn(), verifyEmailCode: vi.fn(),
+  signInWithPassword: vi.fn(),
   signUpWithPassword: (email: string, password: string) => signUp(email, password),
   claimEditor: (code?: string) => claim(code),
 }))
