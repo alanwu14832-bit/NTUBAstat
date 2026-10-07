@@ -1,0 +1,214 @@
+@import "tailwindcss";
+@import "./styles/tokens.css";
+
+/* Expose tokens to Tailwind utilities (bg-surface, text-ink, border-border, ...). */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --radius-card: var(--radius);
+  --radius-card-sm: var(--radius-sm);
+  --shadow-hover: var(--shadow-hover);
+  --shadow-card: var(--shadow-card);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: var(--font-features);
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    /* keep content out of the notch when a phone is turned sideways (viewport-fit=cover) */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  /* No grey flash on tap: every control draws its own pressed state instead. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* With the tap flash gone every control needs its own pressed state. Buttons squeeze a little the moment a
+     finger lands; :where keeps this at zero specificity so any component can override it. Components that
+     animate their own press (the Button component, the sheet backdrop) opt out with data-press="none". */
+  :where(button, [role="button"], summary):not(:disabled):not([data-press="none"]):is(:active, [data-pressed]) {
+    scale: 0.97;
+  }
+  /* A quick second tap is a second tap, not a zoom (recorders tap fast during games). */
+  a, button, select, label, summary, [role="button"], [role="tab"], [role="option"], [role="radio"] {
+    touch-action: manipulation;
+  }
+  /* Theme switches cross-fade instead of snapping. */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: background-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), fill var(--dur-base) var(--ease-out) !important;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ink) 55%, transparent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button, input, select, textarea {
+    font: inherit;
+    color: inherit;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: var(--tracking-heading);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Type scale. Weight and color carry hierarchy; sizes stay close together. */
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: var(--tracking-heading);
+  }
+  .text-display {
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: var(--tracking-display);
+    font-variation-settings: "opsz" 40;
+  }
+  @media (min-width: 768px) {
+    .text-display { font-size: 36px; }
+  }
+  /* Large figures (stat tiles, scoreboards) use the display optical size. */
+  .figure {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum", "lnum";
+    font-variation-settings: "opsz" 48;
+    letter-spacing: var(--tracking-display);
+  }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum", "lnum";
+  }
+  @keyframes draw-x {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  .draw-x {
+    transform-origin: left;
+    animation: draw-x 600ms var(--ease-out) both;
+  }
+  /* Card-like things you can open lift toward a mouse and sink under a finger. Hover is gated to real
+     pointers so a tap on a phone never leaves a card stuck in the raised state. */
+  .lift {
+    transition: translate var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), scale var(--dur-press) var(--ease-out);
+  }
+  .lift:is(:active, [data-pressed]) { translate: 0 0; scale: 0.985; transition-duration: var(--dur-press); }
+  /* Plain controls: a small squeeze the moment a finger lands (pointer-down, not release). */
+  .press {
+    transition: scale var(--dur-press) var(--ease-out);
+  }
+  .press:is(:active, [data-pressed]):not(:disabled) { scale: 0.97; }
+  .hairline {
+    border: 1px solid var(--border);
+  }
+  .prose-max {
+    max-width: 64ch;
+  }
+  /* Thin, theme-aware scrollbars for horizontal tool rows. */
+  .scroll-x {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  .scroll-x::-webkit-scrollbar { height: 6px; }
+  .scroll-x::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+  /* Recharts overrides: keep tick text in the muted token, no dashed lines. */
+  .recharts-cartesian-axis-tick-value,
+  .recharts-polar-angle-axis-tick-value {
+    fill: var(--muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* A tap focuses the chart (or one of recharts' internal layers); no ring around the plot for that. */
+  .recharts-surface:focus,
+  .recharts-wrapper:focus,
+  .recharts-wrapper :focus {
+    outline: none;
+  }
+}
+
+/* 宋體 renders light on screens, so the serif mode runs one weight step heavier across the board.
+   Unlayered on purpose: it has to win over Tailwind's utility layer. */
+html[data-font="serif"] body { font-weight: 500; }
+html[data-font="serif"] .font-normal { font-weight: 500; }
+html[data-font="serif"] .font-medium { font-weight: 600; }
+html[data-font="serif"] .font-semibold,
+html[data-font="serif"] h1, html[data-font="serif"] h2, html[data-font="serif"] h3, html[data-font="serif"] h4,
+html[data-font="serif"] .text-display { font-weight: 700; }
+html[data-font="serif"] .font-bold { font-weight: 700; }
+
+/* People who turn off transparency get a solid dim instead of a blurred backdrop. */
+@media (prefers-reduced-transparency: reduce) {
+  .scrim { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* reduced motion: presses dim instead of moving */
+  .lift, .lift:hover, .lift:is(:active, [data-pressed]), .press:is(:active, [data-pressed]), :where(button, [role="button"], summary):is(:active, [data-pressed]) { translate: none !important; scale: none !important; }
+  :where(button, [role="button"], summary):not(:disabled):not([data-press="none"]):is(:active, [data-pressed]), .press:is(:active, [data-pressed]) { opacity: 0.7; }
+}
+
+/* In the utilities layer (not components) so the raised shadow wins over a card's own shadow-[…] class. */
+@layer utilities {
+  @media (hover: hover) and (pointer: fine) {
+    .lift:hover { translate: 0 -2px; box-shadow: var(--shadow-hover); }
+  }
+}
