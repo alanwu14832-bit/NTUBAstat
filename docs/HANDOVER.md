@@ -56,10 +56,10 @@ Claude 會在 `supabase/migrations/` 多一個檔案並告訴你。到 Supabase 
 | 紀錄員登入後還是不能紀錄 | email 不在紀錄員名單，或大小寫、拼字不同；請現有紀錄員重新新增 |
 | 「第一次使用」說需要信箱確認 | Supabase 的 **Confirm email** 沒關（見 SETUP.md 第 1 步） |
 | 改了程式但網站沒變 | GitHub Actions 的「測試通過就自動上線」失敗，或 Cloudflare 建置失敗（Cloudflare 專案 → **Deployments** 看紀錄） |
-| 網址打不開，但 `xxx.pages.dev` 可以 | 網域到期或 DNS 設定被改；到 Cloudflare **Domain Registration** 與 **Custom domains** 檢查 |
+| 網址打不開，但 `xxx.workers.dev` 可以 | 網域到期或 DNS 設定被改；到 Cloudflare **Domain Registration** 與 **Custom domains** 檢查 |
 
 ## 費用
 
-- Supabase、Cloudflare Pages、GitHub：免費方案就夠
+- Supabase、Cloudflare、GitHub：免費方案就夠
 - 網域：.com 約 NT$350／年（建議一次買 10 年）
 - 使用量變很大（資料庫 500 MB、每月流量 5 GB）時，Supabase 可隨時升級 Pro（US$25／月），資料不用搬
