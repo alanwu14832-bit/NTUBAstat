@@ -1,12 +1,16 @@
-name: 每週備份資料
+name: 每日備份資料
 
-# 每週一把資料庫裡的比賽資料存一份 JSON，放在這次執行的 Artifacts（保留 90 天，所以隨時有約 13 份）。
+# 每天把資料庫裡的比賽資料存一份 JSON，放在這次執行的 Artifacts（保留 30 天，所以隨時有約 30 份）。
 # 用的是網站公開讀取的金鑰，備份內容和網站上任何人看得到的一樣，不含紀錄員帳號。
-# 還原：GitHub → Actions → 每週備份資料 → 選一次執行 → Artifacts 下載；交給 Claude 寫回資料庫。
+# 還原：GitHub → Actions → 每日備份資料 → 選一次執行 → Artifacts 下載；交給 Claude 寫回資料庫。
 on:
   schedule:
-    - cron: '41 4 * * 1'
+    - cron: '41 19 * * *'   # 每天台灣時間 03:41
   workflow_dispatch:
+
+# 只需要讀 repo（上傳 Artifacts 不需要額外權限）
+permissions:
+  contents: read
 
 jobs:
   backup:
@@ -41,4 +45,4 @@ jobs:
         with:
           name: backup-${{ github.run_number }}
           path: backup/
-          retention-days: 90
+          retention-days: 30

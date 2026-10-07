@@ -9,6 +9,7 @@
 | 第一次架設（資料庫、網站、網域） | [docs/SETUP.md](docs/SETUP.md) |
 | 日常維護、改功能、換屆交接、故障排除 | [docs/HANDOVER.md](docs/HANDOVER.md) |
 | 紀錄員與隊員怎麼用網站 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md)（網站的「使用指南」頁也有） |
+| 資料安全制度（防護、帳號、事件處理） | [docs/SECURITY.md](docs/SECURITY.md) |
 | 用 Claude 改程式時的規則 | [CLAUDE.md](CLAUDE.md) |
 
 ## 架構
@@ -18,7 +19,7 @@
 | 程式碼 | 這個 GitHub repo（`web/` 是網站） |
 | 資料庫 | Supabase 免費方案（`supabase/schema.sql`） |
 | 網站 | Cloudflare Workers（`web/wrangler.jsonc`），接這個 repo 的 `main` 自動更新 |
-| 自動化 | `.github/workflows/`：測試通過自動上線、每 3 天讓資料庫保持清醒、每週備份 |
+| 自動化 | `.github/workflows/`：測試通過自動上線、每 3 天讓資料庫保持清醒、每日備份 |
 
 ## 本機開發
 

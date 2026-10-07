@@ -161,10 +161,9 @@ export async function pushCloudDataset(ds: Dataset, mode: 'replace' | 'append' |
   }
   let dropped: string[] = []
   if (games.length) {
-    const { data: auth } = await sb.auth.getUser()
-    const by = auth.user?.email ?? null
-    // older schema without the audit / status / day_roster columns: those are stripped and the upsert retried
-    const res = await upsertGames(games.map((g) => ({ ...toGameRow(g), updated_by: by })))
+    // who changed it is stamped by the database (a name, never an email: these rows are public);
+    // older schema without the status / day_roster columns: those are stripped and the upsert retried
+    const res = await upsertGames(games.map((g) => ({ ...toGameRow(g) })))
     dropped = res.dropped
     fail('比賽清單', res.error)
     // child rows: clear then insert, per game batch
@@ -226,9 +225,18 @@ export async function pushRoster(players: Player[], renames: Record<string, stri
 
 // ---------------------------------------------------------------- editors allowlist
 /**
- * Is this signed-in email allowed to write? Reads the `editors` table (see supabase/schema.sql).
- * Returns true when the table does not exist yet (older projects where every signed-in user may write).
+ * 啟用紀錄員權限 for the signed-in account (supabase/migrations/2026-10-08_security.sql): write access belongs to the
+ * account bound to a listed email — bound by the one-time 邀請碼 (from 紀錄員名單), an email code, or the admin.
+ * null when the database does not have the function yet (then the older email check below applies).
  */
+export type EditorAccess = 'ok' | 'need_code' | 'bad_code' | 'expired' | 'locked' | 'not_listed' | 'taken' | 'not_signed_in'
+export async function claimEditor(code?: string): Promise<EditorAccess | null> {
+  const clean = code?.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+  const { data, error } = await supabase().rpc('claim_editor', { code: clean || null })
+  if (error) { if (error.code === 'PGRST202' || error.code === '42883' || /claim_editor/.test(error.message)) return null; throw new Error(error.message) }
+  return data as EditorAccess
+}
+/** Before the security migration: is this signed-in email on the `editors` list? (true when there is no list at all) */
 export async function fetchIsEditor(email: string | undefined | null): Promise<boolean> {
   if (!email) return false
   const { data, error } = await supabase().from('editors').select('email').eq('email', email.toLowerCase()).limit(1)
@@ -238,13 +246,28 @@ export async function fetchIsEditor(email: string | undefined | null): Promise<b
 
 /** The whole 紀錄員名單 (only editors can read it), oldest first. */
 export async function listEditors(): Promise<Editor[]> {
+  const full = await supabase().from('editors').select('email, note, created_at, user_id, bound_at, invite_expires').order('created_at')
+  if (!full.error) return (full.data ?? []) as Editor[]
+  // before the security migration the binding columns do not exist
   const { data, error } = await supabase().from('editors').select('email, note, created_at').order('created_at')
   if (error) throw new Error(error.message)
   return (data ?? []) as Editor[]
 }
-export async function addEditor(email: string, note: string) {
-  const { error } = await supabase().from('editors').insert({ email: email.trim().toLowerCase(), note: note.trim() || null })
-  if (error) throw new Error(error.code === '23505' ? '這個 email 已經在名單裡' : error.code === '42501' ? '只有紀錄員可以新增紀錄員' : error.message)
+const missingFn = (e: { code?: string; message: string }, fn: string) => e.code === 'PGRST202' || e.code === '42883' || e.message.includes(fn)
+/** Adds a recorder; returns the one-time 邀請碼 to hand over (null on a database without the security migration). */
+export async function addEditor(email: string, note: string): Promise<string | null> {
+  const { data, error } = await supabase().rpc('add_editor', { p_email: email.trim().toLowerCase(), p_note: note.trim() || null })
+  if (!error) return data as string
+  if (!missingFn(error, 'add_editor')) throw new Error(error.code === '23505' ? '這個 email 已經在名單裡' : error.code === '42501' ? '只有紀錄員可以新增紀錄員' : error.message)
+  const ins = await supabase().from('editors').insert({ email: email.trim().toLowerCase(), note: note.trim() || null })
+  if (ins.error) throw new Error(ins.error.code === '23505' ? '這個 email 已經在名單裡' : ins.error.code === '42501' ? '只有紀錄員可以新增紀錄員' : ins.error.message)
+  return null
+}
+/** New 邀請碼 for someone (forgot password, new account): their old account loses write access until it is used. */
+export async function resetEditor(email: string): Promise<string> {
+  const { data, error } = await supabase().rpc('reset_editor', { p_email: email.trim().toLowerCase() })
+  if (error) throw new Error(missingFn(error, 'reset_editor') ? '資料庫還沒更新：請管理員執行 supabase/migrations/2026-10-08_security.sql' : error.message)
+  return data as string
 }
 /** Removes an editor; the database refuses removing yourself (so the list is never left empty). */
 export async function removeEditor(email: string) {
@@ -257,8 +280,9 @@ export async function removeEditor(email: string) {
 export interface CloudDraft<T = unknown> { game_id: string; state: T; updated_by: string | null; updated_at: string }
 const draftsMissing = (e: { message: string; code?: string } | null) => !!e && (e.code === '42P01' || /record_drafts/.test(e.message))
 /** Upsert the in-progress state. Silently a no-op when the table has not been created yet. */
-export async function saveCloudDraft(gameId: string, state: unknown, email?: string | null): Promise<boolean> {
-  const { error } = await supabase().from('record_drafts').upsert({ game_id: gameId, state, updated_by: email ?? null, updated_at: new Date().toISOString() }, { onConflict: 'game_id' })
+export async function saveCloudDraft(gameId: string, state: unknown, _email?: string | null): Promise<boolean> {
+  // updated_by is stamped by the database with the recorder's name (the live page reads this table publicly)
+  const { error } = await supabase().from('record_drafts').upsert({ game_id: gameId, state, updated_at: new Date().toISOString() }, { onConflict: 'game_id' })
   if (draftsMissing(error)) return false
   if (error) throw new Error(error.message)
   return true
@@ -302,12 +326,19 @@ export async function signInWithPassword(email: string, password: string) {
  */
 export async function signUpWithPassword(email: string, password: string) {
   const { data, error } = await supabase().auth.signUp({ email, password })
-  if (error) throw new Error(/already registered/i.test(error.message) ? '這個 email 已經設定過密碼，請直接用「密碼登入」' : /signups? not allowed/i.test(error.message) ? '目前沒有開放設定密碼，請找管理員' : error.message)
+  if (error) throw new Error(/already registered/i.test(error.message) ? '這個 email 已經有帳號，請改用「密碼登入」；如果不是你本人建立的，請找紀錄員重發邀請碼' : /signups? not allowed/i.test(error.message) ? '目前沒有開放設定密碼，請找管理員' : error.message)
   // an existing account comes back without identities (Supabase hides that it exists)
-  if (data.user && !data.user.identities?.length) throw new Error('這個 email 已經設定過密碼，請直接用「密碼登入」')
+  if (data.user && !data.user.identities?.length) throw new Error('這個 email 已經有帳號，請改用「密碼登入」；如果不是你本人建立的，請找紀錄員重發邀請碼')
   if (!data.session) throw new Error('帳號已建立，但需要先到信箱確認；請管理員到 Supabase 關閉「Confirm email」')
 }
 export async function signOut() { await supabase().auth.signOut() }
+/** The signed-in account's own password (8+ characters). */
+export async function setOwnPassword(password: string) {
+  const { error } = await supabase().auth.updateUser({ password })
+  if (error) throw new Error(/same/i.test(error.message) ? '新密碼不能和舊密碼一樣' : error.message)
+}
+/** Sign out every other device of this account (after taking it over with a 邀請碼). */
+export async function signOutOtherDevices() { await supabase().auth.signOut({ scope: 'others' }) }
 export function onAuthChange(cb: (user: User | null) => void) {
   const { data } = supabase().auth.onAuthStateChange((_e, session) => cb(session?.user ?? null))
   return () => data.subscription.unsubscribe()
