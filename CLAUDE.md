@@ -16,7 +16,7 @@ A database change needs a migration in both repos, and the user must run it in b
 ## Layout
 - `web/` — the site (Vite + React 19 + TypeScript + Tailwind 4 + zustand). `npm ci`, `npm test`, `npm run build` from `web/`.
 - `supabase/schema.sql` — the whole database, idempotent. `supabase/migrations/` — changes after the first setup.
-- `tools/build_workbook.py` — the Excel 總表. `BLANK=1 TEAM_NAME=NTUBA TEAM_INNINGS=9 python3 tools/build_workbook.py`
+- `tools/build_workbook.py` — the Excel 總表. `BLANK=1 TEAM_NAME=NTUBT TEAM_INNINGS=9 python3 tools/build_workbook.py`
   writes the blank template the site hands out (`data/棒球數據總表.xlsx`, copied into `web/public` by the prebuild).
 - `data/` (`games/`, `legacy/`, `BAFIN_棒球數據總表.xlsx`) and `web/src/data/seed/` — BaFiN's sample games, **test
   fixtures only**. The site never ships them (`__TEAM_SEED__` is false outside `vite test`).

@@ -1,7 +1,7 @@
 /**
  * The 公版 the site hands out (data/棒球數據總表.xlsx, built by `BLANK=1 python3 tools/build_workbook.py`) must keep up with the website: every column the
  * backup export writes has to exist in the template too. When this fails, add the column in tools/build_workbook.py and
- * run `BLANK=1 TEAM_NAME=NTUBA TEAM_INNINGS=9 python3 tools/build_workbook.py` (the build copies the file into web/public). CI blocks the deploy until then.
+ * run `BLANK=1 TEAM_NAME=NTUBT TEAM_INNINGS=9 python3 tools/build_workbook.py` (the build copies the file into web/public). CI blocks the deploy until then.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

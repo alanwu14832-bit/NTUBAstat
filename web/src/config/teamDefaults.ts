@@ -6,11 +6,11 @@
  */
 export const TEAM_DEFAULTS = {
   /** VITE_TEAM_NAME: the team's name as written in games and workbooks — how "us" is told from the opponent. */
-  name: 'NTUBA',
+  name: 'NTUBT',
   /** VITE_TEAM_ORG: the organization, the sidebar title and the home-screen app name. */
   org: '國立臺灣大學棒球隊',
   /** VITE_TEAM_SHORT: short name for the sidebar subtitle, the tab title and the home-screen label. */
-  short: 'NTUBA',
+  short: 'NTUBT',
   /** VITE_TEAM_MONOGRAM: letter shown when there is no mark image. */
   monogram: 'N',
   /** VITE_TEAM_MARK: square mark (sidebar, tab icon, home screen): a file in web/public or a full URL. */
