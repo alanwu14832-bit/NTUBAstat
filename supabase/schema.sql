@@ -467,8 +467,8 @@ begin
 end $$;
 revoke all on function admin_bind_editor(text, text) from public, anon, authenticated;
 
--- 管理員的邀請碼：用在網站登入框的「第一次使用」（還沒啟用的紀錄員都會拿到一組新的，7 天內有效）
 -- 2026-10-09 壘死（舊資料庫補欄位；新建的已在上面）
 alter table batting_pa add column if not exists baserunning_outs smallint not null default 0;
 
+-- 管理員的邀請碼：用在網站登入框的「第一次使用」（還沒啟用的紀錄員都會拿到一組新的，7 天內有效）
 select email as 紀錄員, admin_issue_editor_code(email) as 邀請碼 from editors where user_id is null;
