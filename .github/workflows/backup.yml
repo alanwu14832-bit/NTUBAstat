@@ -18,6 +18,8 @@ jobs:
           URL: ${{ vars.VITE_SUPABASE_URL }}
           KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
         run: |
+          # 舊版 anon key（eyJ 開頭）也放進 Authorization；新版 publishable key 只放 apikey
+          AUTH=(); case "$KEY" in eyJ*) AUTH=(-H "Authorization: Bearer $KEY");; esac
           set -euo pipefail
           mkdir -p backup
           for t in games players batting_pa pitching_pa fielding_lines albums registrations; do
@@ -25,7 +27,7 @@ jobs:
             from=0
             while true; do
               # PostgREST 一次最多回 1000 列，用 Range 分頁
-              curl -sS --fail "$URL/rest/v1/$t?select=*" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+              curl -sS --fail "$URL/rest/v1/$t?select=*" -H "apikey: $KEY" "${AUTH[@]}" \
                 -H "Range-Unit: items" -H "Range: $from-$((from + 999))" > page.json || { echo "::warning::$t 讀不到（資料表不存在？）"; break; }
               n=$(jq length page.json)
               jq -s '.[0] + .[1]' "backup/$t.json" page.json > merged.json && mv merged.json "backup/$t.json"

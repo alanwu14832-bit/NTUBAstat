@@ -9,7 +9,7 @@ docs/HANDOVER.md; keep those in step with what you change.
 ## Layout
 - `web/` — the site (Vite + React 19 + TypeScript + Tailwind 4 + zustand). `npm ci`, `npm test`, `npm run build` from `web/`.
 - `supabase/schema.sql` — the whole database, idempotent. `supabase/migrations/` — changes after the first setup.
-- `tools/build_workbook.py` — the Excel 總表. `BLANK=1 TEAM_NAME=臺大棒球隊 TEAM_INNINGS=9 python3 tools/build_workbook.py`
+- `tools/build_workbook.py` — the Excel 總表. `BLANK=1 TEAM_NAME=NTUBA TEAM_INNINGS=9 python3 tools/build_workbook.py`
   writes the blank template the site hands out (`data/棒球數據總表.xlsx`, copied into `web/public` by the prebuild).
 - `data/` (`games/`, `legacy/`, `BAFIN_棒球數據總表.xlsx`) and `web/src/data/seed/` — BaFiN's sample games, **test
   fixtures only**. The site never ships them (`__TEAM_SEED__` is false outside `vite test`).

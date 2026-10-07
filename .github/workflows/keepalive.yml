@@ -22,7 +22,9 @@ jobs:
           URL: ${{ vars.VITE_SUPABASE_URL }}
           KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
         run: |
-          code=$(curl -sS -o /dev/null -w "%{http_code}" "$URL/rest/v1/games?select=id&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          # 舊版 anon key（eyJ 開頭）也放進 Authorization；新版 publishable key 只放 apikey
+          AUTH=(); case "$KEY" in eyJ*) AUTH=(-H "Authorization: Bearer $KEY");; esac
+          code=$(curl -sS -o /dev/null -w "%{http_code}" "$URL/rest/v1/games?select=id&limit=1" -H "apikey: $KEY" "${AUTH[@]}")
           echo "HTTP $code"
           test "$code" = "200"
 
