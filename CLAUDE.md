@@ -42,7 +42,8 @@ A database change needs a migration in both repos, and the user must run it in b
   `npx wrangler deploy`; the maintainer is paid, so Vercel Hobby is not allowed). SPA routing comes from
   `not_found_handling: single-page-application`; do not add a `404.html`.
 - `record/sim.test.ts` plays 150 random games through the recording model: keep it green when touching recording or the
-  runner timeline.
+  runner timeline. The scripted end-to-end games (real 紀錄比賽 screen vs a hand-scored answer key) live in the 系隊 repo,
+  `bafinstat/tools/gamesim/` (it needs that site's sample roster); the code is shared, so run them there.
 - Games are written by the `save_games()` RPC, one transaction per batch (`supabase/migrations/2026-10-13_save_games.sql`);
   `pushCloudDataset` queues saves per device and falls back to piecewise writes before that migration. The record page
   syncs every change (record_drafts each time, the game rows only when they changed).
