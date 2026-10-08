@@ -32,7 +32,7 @@
 3. **URL Configuration**：Site URL 與 Redirect URLs 只留自己的網址。
 4. **Advisors → Security Advisor**：按 Refresh，應該沒有紅色項目；有的話把畫面給 Claude 看。
 5. **兩步驟驗證**：Supabase、Cloudflare、GitHub、共用 Gmail 全部開 2FA。
-6. **快速登入（要用才設）**：執行 `supabase/migrations/2026-10-10_quick_login.sql`，再到 Authentication → Sign In / Providers 打開 **Allow anonymous sign-ins**；密碼由紀錄員在「資料匯入」頁的「快速登入」卡片設定（或 SQL：`select set_quick_login('密碼', 30);`，30 改成 0 就是永久；關閉：`select set_quick_login(null);`；永久需要先執行 `2026-10-11_quick_login_forever.sql`）。快速登入密碼等於寫入權，只告訴需要紀錄的人；外流就馬上換一組。
+6. **快速登入（要用才設）**：執行 `supabase/migrations/2026-10-10_quick_login.sql`，再到 Authentication → Sign In / Providers 打開 **Allow anonymous sign-ins**；密碼由紀錄員在「資料匯入」頁的「快速登入」卡片設定（或 SQL：`select set_quick_login('密碼', 30);`，30 改成 0 就是永久；關閉：`select set_quick_login(null);`；永久需要先執行 `2026-10-12_quick_login_fix.sql`（已包含 2026-10-11））。快速登入密碼等於寫入權，只告訴需要紀錄的人；外流就馬上換一組。
 7. **GitHub Actions 變數**：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`（每日備份與保持清醒會用）。
 
 ## 4. 人員與權限
