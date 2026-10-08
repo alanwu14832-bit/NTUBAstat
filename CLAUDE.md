@@ -30,9 +30,11 @@ A database change needs a migration in both repos, and the user must run it in b
   `schema.sql`, and tell the maintainer to run the migration in Supabase → SQL Editor. The site must keep working before
   it is run (see how `runner` / `errors` / `day_roster` fall back and warn in `web/src/data/supabase.ts`).
 - Never put the Supabase service_role key (or any secret) in the site; everything the browser does uses the anon key and
-  row-level security. Writes are allowed only for the account bound to an `editors` row (`is_editor()` checks
+  row-level security. Writes are allowed only for the account bound to an `editors` row (`is_bound_editor()` checks
   `user_id = auth.uid()`; binding is by 邀請碼, email code or the admin — see `supabase/migrations/2026-10-08_security.sql`
-  and docs/SECURITY.md). Never write an email into a public table (`updated_by`/`created_by` are stamped by a trigger),
+  and docs/SECURITY.md), or for a live 快速登入 session (anonymous sign-in + the shared password checked in the database,
+  `quick_sessions`; `supabase/migrations/2026-10-10_quick_login.sql`). `is_editor()` = either; the 紀錄員名單,
+  `audit_log` and the quick password itself stay with `is_bound_editor()`. Never check that password in the site. Never write an email into a public table (`updated_by`/`created_by` are stamped by a trigger),
   and keep the Content-Security-Policy (`web/src/config/security.ts`) and `web/public/_headers` when adding features.
 - Hosting is Cloudflare Workers static assets (`web/wrangler.jsonc`, root directory `web`, deploy command
   `npx wrangler deploy`; the maintainer is paid, so Vercel Hobby is not allowed). SPA routing comes from

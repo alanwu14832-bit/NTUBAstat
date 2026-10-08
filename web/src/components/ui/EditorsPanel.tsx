@@ -12,7 +12,8 @@ import { useDataStore } from '../../store/data'
 export function EditorsPanel() {
   const cloud = useDataStore((s) => s.cloud)
   const me = cloud.user?.email?.toLowerCase() ?? ''
-  const show = cloud.configured && !!cloud.user && cloud.isEditor
+  // (a 快速登入 session cannot read or change the list: the database keeps it for own-account recorders)
+  const show = cloud.configured && !!cloud.user && cloud.isEditor && !cloud.user.is_anonymous
   const [editors, setEditors] = useState<Editor[] | null>(null)
   const [email, setEmail] = useState('')
   const [note, setNote] = useState('')
