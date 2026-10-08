@@ -15,6 +15,7 @@
 | 資料庫 | Supabase Postgres + Row Level Security | **任何人可讀**；**只有「已啟用的紀錄員帳號」可寫**（`is_editor()` 比對登入帳號本身，不只是 email） |
 | 帳號啟用 | `supabase/migrations/2026-10-08_security.sql` | 紀錄員名單上的 email 要用**邀請碼**啟用到一個帳號才能寫。光是用某人的 email 註冊帳號，什麼都寫不了 |
 | 邀請碼 | 10 碼、7 天有效、只存雜湊值 | 輸錯 10 次鎖住；用過即失效；紀錄員也讀不到；啟用時一併設定新密碼並登出其他裝置 |
+| 快速登入 | `supabase/migrations/2026-10-10_quick_login.sql` | 一組共用密碼，輸入後那台裝置變成紀錄員 N 天（網站先匿名登入，資料庫比對密碼的 bcrypt 雜湊，網站本身拿不到密碼）。**每小時全隊合計只能錯 10 次**，錯滿就暫停一小時（email 登入不受影響）。快速登入可以紀錄、修改比賽，但**看不到也改不了紀錄員名單、操作紀錄和快速登入密碼**；換密碼或關閉時，所有快速登入的裝置立刻失去寫入權。寫入的資料標成「快速登入」 |
 | 金鑰 | 前端只有 anon（publishable）key | 權限完全由 RLS 決定；匿名角色另外被收回所有寫入權；`service_role` key 永遠不放前端、不進 git（已掃過整個 git 歷史，沒有外洩） |
 | 個資 | 公開表格不存 email | `updated_by`／`created_by` 由資料庫自動填紀錄員名單上的備註名稱，舊資料裡的 email 已換掉 |
 | 稽核 | `audit_log`（只有紀錄員讀得到） | 比賽、球員、報名名單、相簿、紀錄員名單的每次新增／修改／刪除：時間、帳號、哪一筆；刪除會保留整列內容 |
@@ -31,13 +32,15 @@
 3. **URL Configuration**：Site URL 與 Redirect URLs 只留自己的網址。
 4. **Advisors → Security Advisor**：按 Refresh，應該沒有紅色項目；有的話把畫面給 Claude 看。
 5. **兩步驟驗證**：Supabase、Cloudflare、GitHub、共用 Gmail 全部開 2FA。
-6. **GitHub Actions 變數**：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`（每日備份與保持清醒會用）。
+6. **快速登入（要用才設）**：執行 `supabase/migrations/2026-10-10_quick_login.sql`，再到 Authentication → Sign In / Providers 打開 **Allow anonymous sign-ins**；密碼由紀錄員在「資料匯入」頁的「快速登入」卡片設定（或 SQL：`select set_quick_login('密碼', 30);`，關閉：`select set_quick_login(null);`）。快速登入密碼等於寫入權，只告訴需要紀錄的人；外流就馬上換一組。
+7. **GitHub Actions 變數**：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`（每日備份與保持清醒會用）。
 
 ## 4. 人員與權限
 
 | 角色 | 能做什麼 | 怎麼給 | 怎麼收 |
 |---|---|---|---|
 | 瀏覽者 | 看所有頁面 | 不用做任何事 | — |
+| 快速登入 | 紀錄、修改、刪除比賽（不能管理紀錄員名單） | 紀錄員在「資料匯入 → 快速登入」設一組密碼告訴他 | 換密碼或關閉快速登入，所有快速登入的裝置立即失效 |
 | 紀錄員 | 紀錄、修改、刪除比賽，管理紀錄員名單 | 紀錄員名單 → 新增 → 把邀請碼私下傳給對方 | 紀錄員名單 → 移除（立即失效） |
 | 管理員 | 上述全部 + Supabase／Cloudflare／GitHub 後台 | 邀請進 Supabase 組織 | 每學期檢查成員，卸任立刻移除 |
 
@@ -50,6 +53,7 @@
 |---|---|
 | 紀錄員忘記密碼 | 見 [HANDOVER.md](HANDOVER.md)「紀錄員 → 忘記密碼」 |
 | 懷疑某個紀錄員帳號被盜 | ① 紀錄員名單按他的「重發邀請碼」（那個帳號立刻失去寫入權）② Supabase → Table Editor → `audit_log` 依時間看改了什麼 ③ 用每日備份還原（備份檔交給 Claude）④ 本人用新邀請碼重新啟用 |
+| 快速登入密碼外流 | 資料匯入 → 快速登入 → 換一組密碼（或關閉），所有快速登入的裝置立刻失去寫入權；`audit_log` 裡標「快速登入」的帳號可以看改了什麼 |
 | 資料被大量刪除 | 先移除可疑帳號，再用前一天的每日備份還原；`audit_log` 的刪除紀錄保留了比賽本身的內容 |
 | 懷疑金鑰外洩 | anon key 本來就公開，不用處理；`service_role` key 外洩時到 Supabase → Settings → API 重設，並檢查 `audit_log` |
 
