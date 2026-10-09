@@ -2,7 +2,7 @@
 // Cloudflare 專案的 Root directory 要填 web，Deploy command 用 npx wrangler deploy。
 // name 要和 Cloudflare 上的專案名稱一樣。
 {
-  "name": "ntubt",
+  "name": "ntubtstat",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./dist",

@@ -20,7 +20,7 @@
    - **Allow new users to sign up**：開啟（紀錄員要自己設定密碼；沒有邀請碼的帳號只能瀏覽，不能寫入）
    - **Email** → **Confirm email**：關閉（免費方案寄信有限制，紀錄員會收不到確認信；安全靠邀請碼，不靠確認信）
    - **Email** → **Minimum password length**：設 **8**
-   - **URL Configuration** → Site URL 與 Redirect URLs 只填自己的網址（例如 `https://ntubt.stat.workers.dev`）
+   - **URL Configuration** → Site URL 與 Redirect URLs 只填自己的網址（例如 `https://ntubtstat.mbaw.workers.dev`）
 4. 左側 **Project Settings** → **API**（或 **API Keys**），記下兩個值：
    - **Project URL**（`https://xxxx.supabase.co`）
    - **anon public** key（新版介面叫 publishable key，兩者都可以）
@@ -32,7 +32,7 @@ Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都�
 1. 到 [dash.cloudflare.com](https://dash.cloudflare.com) 用共用 Gmail 註冊並登入
 2. **Workers & Pages** → **Create** → **Import a repository**
    - 授權 GitHub 時用**維護者自己的 GitHub 帳號**登入，只勾選 `ntubastat` 這個 repo
-   - Project name 填 `ntubt`（要和 `web/wrangler.jsonc` 的 `name` 一樣）
+   - Project name 填 `ntubtstat`（要和 `web/wrangler.jsonc` 的 `name` 一樣）
 3. 建置設定（建立後也可以在 **Settings** → **Build** → **Build configuration** 修改）：
 
    | 欄位 | 填 |
@@ -50,7 +50,7 @@ Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都�
    | `VITE_SUPABASE_ANON_KEY` | 第 1 步的 anon / publishable key |
    | `NODE_VERSION` | `22` |
 
-5. **Deploy**（之後改設定要到 **Deployments** 按 **Retry build**）。約兩分鐘後得到網址 `https://ntubt.<你的帳號>.workers.dev`（目前是 `https://ntubt.stat.workers.dev`）。
+5. **Deploy**（之後改設定要到 **Deployments** 按 **Retry build**）。約兩分鐘後得到網址 `https://ntubtstat.<你的帳號>.workers.dev`（目前是 `https://ntubtstat.mbaw.workers.dev`）。
 
 > 有收費就是商業用途，Vercel 免費方案不能用；Cloudflare 免費方案沒有這個限制。
 
@@ -65,7 +65,7 @@ Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都�
 **Authentication** → **URL Configuration**：
 
 - **Site URL**：網站網址（有買網域就填網域，例如 `https://ntubaseball.com`）
-- **Redirect URLs** 加上：`https://ntubt.<你的帳號>.workers.dev/**`，有網域的話再加 `https://你的網域/**`
+- **Redirect URLs** 加上：`https://ntubtstat.<你的帳號>.workers.dev/**`，有網域的話再加 `https://你的網域/**`
 
 ## 5. GitHub 自動化
 
