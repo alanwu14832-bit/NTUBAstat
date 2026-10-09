@@ -24,6 +24,8 @@
 
 Claude 會在 `supabase/migrations/` 多一個檔案並告訴你。到 Supabase → **SQL Editor** 貼上那個檔案執行一次。執行前網站照常可用，只是新功能的資料存不進雲端（網站會提示）。
 
+- `supabase/migrations/2026-10-14_record_fields.sql`：**比賽結束時間、對方投手**。在 `games` 加 `end_time`（結束時間；開賽時間沿用 `time`，比賽時間由兩者算出），在 `batting_pa` 加 `opp_pitcher`（對方投手姓名，選填）、`opp_hand`（L 左投／R 右投），並把 `save_games()` 更新成也存結束時間。沒執行時網站照常運作：結束時間和對方投手只是不會存進雲端，紀錄比賽頁不會問對方投手、會在上方提醒，存檔時也會提醒。重複執行也安全。**系隊、校隊兩個 Supabase 專案都要各執行一次**：Supabase → 選專案 → 左側「SQL Editor」→「New query」→ 貼上整個檔案 →「Run」。
+
 ### 想要系隊版的新功能
 
 在這個 repo 的 Claude 對話裡說：「把 bafinstat 的某某功能搬過來」，並把 bafinstat 加進對話。

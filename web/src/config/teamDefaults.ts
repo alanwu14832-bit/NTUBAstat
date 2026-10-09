@@ -19,6 +19,9 @@ export const TEAM_DEFAULTS = {
   logo: 'logo.png',
   /** VITE_TEAM_INNINGS: regulation innings; ERA and new games default to it. */
   innings: 9,
+  /** VITE_TEAM_TIEBREAK: 延長賽突破僵局 — the bases the rule puts runners on from the inning after regulation (WBSC:
+   *  '12' 一、二壘; '2' 二壘 only; '123' 滿壘; '' = the team does not use it). Each game can still change it on 紀錄比賽. */
+  tiebreak: '12' as string,
   /** VITE_TEAM_SEED: '1' starts from the sample games in src/data/seed (only the tests use them); the site starts empty. */
   seed: false,
   /** VITE_TEAM_FILE_PREFIX: start of downloaded backup file names. */
@@ -44,6 +47,8 @@ export function resolveTeam(env: Record<string, string | boolean | undefined>): 
   const color = (key: string, fallback: string) => { const v = str(key, ''); return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ? v : fallback }
   const innings = Number(env.VITE_TEAM_INNINGS)
   const seed = str('VITE_TEAM_SEED', '')
+  const tb = str('VITE_TEAM_TIEBREAK', '').toLowerCase()
+  const tiebreak = ['2', '12', '123'].includes(tb) ? tb : ['0', 'off', 'false', 'no'].includes(tb) ? '' : TEAM_DEFAULTS.tiebreak
   return {
     name: str('VITE_TEAM_NAME', TEAM_DEFAULTS.name),
     org: str('VITE_TEAM_ORG', TEAM_DEFAULTS.org),
@@ -52,6 +57,7 @@ export function resolveTeam(env: Record<string, string | boolean | undefined>): 
     mark: str('VITE_TEAM_MARK', TEAM_DEFAULTS.mark),
     logo: str('VITE_TEAM_LOGO', TEAM_DEFAULTS.logo),
     innings: Number.isInteger(innings) && innings >= 1 && innings <= 12 ? innings : TEAM_DEFAULTS.innings,
+    tiebreak,
     seed: seed ? !['0', 'false', 'no', 'off'].includes(seed.toLowerCase()) : TEAM_DEFAULTS.seed,
     filePrefix: str('VITE_TEAM_FILE_PREFIX', TEAM_DEFAULTS.filePrefix),
     accent: color('VITE_TEAM_ACCENT', TEAM_DEFAULTS.accent),

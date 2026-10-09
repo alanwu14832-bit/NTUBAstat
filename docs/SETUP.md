@@ -50,6 +50,8 @@ Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都�
    | `VITE_SUPABASE_ANON_KEY` | 第 1 步的 anon / publishable key |
    | `NODE_VERSION` | `22` |
 
+   選用：延長賽突破僵局預設從第 10 局起放一、二壘（WBSC 規則）。規則不同時加 `VITE_TEAM_TIEBREAK`：`2` 只放二壘、`123` 滿壘、`off` 不採用；每場在「紀錄比賽」也還能改。
+
 5. **Deploy**（之後改設定要到 **Deployments** 按 **Retry build**）。約兩分鐘後得到網址 `https://ntubtstat.<你的帳號>.workers.dev`（目前是 `https://ntubtstat.mbaw.workers.dev`）。
 
 > 有收費就是商業用途，Vercel 免費方案不能用；Cloudflare 免費方案沒有這個限制。
