@@ -74,7 +74,7 @@ Claude 會在 `supabase/migrations/` 多一個檔案並告訴你。到 Supabase 
 - 保存需要 GitHub → Settings → Secrets and variables → Actions → **Variables** 有 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`（和每日備份用的一樣）；沒有的話 Actions 會出現黃色警告「這一版沒有保存」。
 - 剛上線的那一版要到下一次更新後才會出現在清單裡（它就是現在的網站）。
 - **真的要把網站退回某一版**（不只是看）：
-  1. 最快：Cloudflare → Workers & Pages → ntubastat → **Deployments** → 找到那個時間的版本 → **Rollback**。之後網站再更新時會自動換成新版。
+  1. 最快：Cloudflare → Workers & Pages → ntubt → **Deployments** → 找到那個時間的版本 → **Rollback**。之後網站再更新時會自動換成新版。
   2. 或請 Claude「把網站退回某日某時那一版」，它會把程式退回並重新上線。
 
 ## 把 GitHub repo 改成私人（不公開）
@@ -83,7 +83,7 @@ Claude 會在 `supabase/migrations/` 多一個檔案並告訴你。到 Supabase 
 3. 「網站版本」要能讀到私人 repo 的舊版：
    - GitHub 右上頭像 → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**：
      Repository access 選 **Only select repositories** → 這個 repo；Permissions → Repository permissions → **Contents: Read-only**；到期日選最長，記下到期日。
-   - Cloudflare → Workers & Pages → ntubastat → **Settings** → **Build** → **Variables and secrets** → 新增 `ARCHIVE_TOKEN`（Secret），值貼上那串 token → 重新部署一次。
+   - Cloudflare → Workers & Pages → ntubt → **Settings** → **Build** → **Variables and secrets** → 新增 `ARCHIVE_TOKEN`（Secret），值貼上那串 token → 重新部署一次。
    - token 到期前重新產生一個換上去（沒換的話網站照常，只是「網站版本」暫時列不出舊版）。
 4. 私人 repo 的 GitHub Actions 每月免費 2,000 分鐘：每次上線約 1–2 分鐘，用量在 GitHub → Settings → Billing 看。
 
