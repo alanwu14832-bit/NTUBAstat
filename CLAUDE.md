@@ -18,8 +18,10 @@ A database change needs a migration in both repos, and the user must run it in b
 - `supabase/schema.sql` — the whole database, idempotent. `supabase/migrations/` — changes after the first setup.
   `supabase/tests/run.sh` (also in auto-deploy) loads them into a plain Postgres and runs `permissions.sql`: add a check
   there for every new table, policy or function.
-- `tools/build_workbook.py` — the Excel 總表. `BLANK=1 TEAM_NAME=NTUBT TEAM_INNINGS=9 python3 tools/build_workbook.py`
-  writes the blank template the site hands out (`data/棒球數據總表.xlsx`, copied into `web/public` by the prebuild).
+- `tools/build_workbook.py` — the Excel 總表. `BLANK=1 TEAM_NAME=NTUBT TEAM_INNINGS=9 OPENPYXL_LXML=False python3 tools/build_workbook.py`
+  writes the blank template the site hands out (`data/棒球數據總表.xlsx`, copied into `web/public` by the prebuild); without
+  `BLANK` it rebuilds the sample `data/BAFIN_棒球數據總表.xlsx` the tests read (rebuild both when the builder changes).
+  `OPENPYXL_LXML=False` keeps the committed files' XML layout. Its 總表 formulas must give the site's numbers.
 - `data/` (`games/`, `legacy/`, `BAFIN_棒球數據總表.xlsx`) and `web/src/data/seed/` — BaFiN's sample games, **test
   fixtures only**. The site never ships them (`__TEAM_SEED__` is false outside `vite test`).
 
@@ -43,7 +45,8 @@ A database change needs a migration in both repos, and the user must run it in b
   `not_found_handling: single-page-application`; do not add a `404.html`.
 - `record/sim.test.ts` plays 150 random games through the recording model: keep it green when touching recording or the
   runner timeline. The scripted end-to-end games (real 紀錄比賽 screen vs a hand-scored answer key) live in the 系隊 repo,
-  `bafinstat/tools/gamesim/` (it needs that site's sample roster); the code is shared, so run them there.
+  `bafinstat/tools/gamesim/` (it needs that site's sample roster); the code is shared, so run them there. So do its
+  `edit1.mjs` (修改資料) and `excel.mjs` (匯出／匯入, 單場模板, the LibreOffice-recalculated 總表 against the site).
 - Games are written by the `save_games()` RPC, one transaction per batch (`supabase/migrations/2026-10-13_save_games.sql`);
   `pushCloudDataset` queues saves per device and falls back to piecewise writes before that migration. The record page
   syncs every change (record_drafts each time, the game rows only when they changed).
