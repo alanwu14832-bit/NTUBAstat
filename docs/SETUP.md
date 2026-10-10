@@ -52,6 +52,13 @@ Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都�
 
    選用：延長賽突破僵局預設從第 10 局起放一、二壘（WBSC 規則）。規則不同時加 `VITE_TEAM_TIEBREAK`：`2` 只放二壘、`123` 滿壘、`off` 不採用；每場在「紀錄比賽」也還能改。
 
+   選用：網站上的「季」（紀錄簿、生涯逐季、逐季戰績、篩選列的年份按鈕）預設是西元年。想改成學年制（8 月到隔年 7 月），加 `VITE_TEAM_SEASON_START`，值填 `8`。
+
+   選用：LINE、FB 貼網址時的連結預覽（圖和一句介紹）：
+   - `VITE_TEAM_SITE_URL`：網站的完整網址（`https://` 開頭、結尾不要 `/`）。預設是 `web/src/config/teamDefaults.ts` 的 `siteUrl`（網站目前的網址），換網址或買了網域才要設。
+   - `VITE_TEAM_OG_IMAGE`：預覽圖（1200×630），預設 `web/public/og.png`。
+   - `VITE_TEAM_DESCRIPTION`：預覽下面的一句介紹；不填就自動寫「國立臺灣大學棒球隊（NTUBT）的比賽紀錄、即時比分與球員數據…」。
+
 5. **Deploy**（之後改設定要到 **Deployments** 按 **Retry build**）。約兩分鐘後得到網址 `https://ntubtstat.<你的帳號>.workers.dev`（目前是 `https://ntubtstat.mbaw.workers.dev`）。
 
 > 有收費就是商業用途，Vercel 免費方案不能用；Cloudflare 免費方案沒有這個限制。
@@ -61,6 +68,7 @@ Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都�
 1. Cloudflare 左側 **Domain Registration** → **Register Domains**，搜尋想要的名字
 2. 購買時年數選 **10 年**（之後不用管續約），自動續約也打開
 3. 回到 **Workers & Pages** → 這個專案 → **Settings** → **Domains & Routes** → **Add** → **Custom domain**，填剛買的網址
+4. 讓連結預覽改用新網址：同一個專案 → **Settings** → **Build** → **Variables and secrets** → 新增 `VITE_TEAM_SITE_URL`，值填 `https://你的網域`（結尾不要 `/`）→ **Deployments** → 最新一筆 → **Retry build**。LINE、FB 會記住舊預覽幾天，Facebook 可用「分享偵錯工具」（developers.facebook.com/tools/debug）重新抓取。
 
 ## 4. 登入轉址（Supabase）
 
@@ -92,6 +100,9 @@ Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都�
 - `name`：**比賽紀錄上「我隊」的寫法**，Excel 匯入時靠它分辨哪一隊是我們
 - `org` / `short`：網站側欄與手機主畫面顯示的名稱
 - `innings`：幾局制（ERA 換算與新比賽預設）
+- `pitchRest`：投手休息表的規則（預設 MLB Pitch Smart 19–22 歲建議，只是提醒，不會擋住換投）
+
+換了隊徽或隊名，請 Claude「重新產生連結預覽圖」（它會跑 `tools/og/make-og.mjs`，產生新的 `web/public/og.png`）。
 
 ## 7. 驗收
 

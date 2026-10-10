@@ -79,6 +79,23 @@ Claude 會在 `supabase/migrations/` 多一個檔案並告訴你。到 Supabase 
   1. 最快：Cloudflare → Workers & Pages → ntubtstat → **Deployments** → 找到那個時間的版本 → **Rollback**。之後網站再更新時會自動換成新版。
   2. 或請 Claude「把網站退回某日某時那一版」，它會把程式退回並重新上線。
 
+## 照片與比賽影片
+- 照片和影片都只存連結，網站不放檔案。照片放攝影師的 Google Drive 資料夾（共用 → 一般存取權「知道連結的使用者：檢視者」），紀錄員到「相簿」頁「新增相簿連結」選那場比賽貼上。
+- 比賽影片也一樣：整場影片上傳到 YouTube 設成「不公開」（或放 Google Drive 設「知道連結的使用者：檢視者」），紀錄員在比賽頁「照片與影片」按「＋ 比賽影片」貼上；它存在同一張相簿表（標成「比賽影片」），不用改資料庫，網站也不嵌入播放器，點了在新分頁打開。
+
+## 連結預覽（LINE、FB 貼網址時出現的圖和介紹）
+- 在 LINE、Facebook、Messenger、Discord 貼本站任何網址，都會出現同一張預覽圖（`web/public/og.png`，深色記分板底、隊徽、隊名、網址）、標題「NTUBT Stats — 國立臺灣大學棒球隊數據平台」和一句介紹。網站畫面本身沒有任何變化。
+- **LINE、FB 會把預覽記住好幾天**：之前貼過的連結不會馬上換新圖。Facebook 可以到「分享偵錯工具」（developers.facebook.com/tools/debug）貼上網址 → 按「再次抓取」；LINE 通常幾天後自己更新。
+- **換了隊徽或隊名**：請 Claude「重新產生連結預覽圖」（它會跑 `tools/og/make-og.mjs`，產生新的 `web/public/og.png` 再上線）。
+- **換了網址或買了網域**：照 [SETUP.md](SETUP.md) 第 3 步設 `VITE_TEAM_SITE_URL`。沒設的話預覽圖用 `web/src/config/teamDefaults.ts` 裡的 `siteUrl`（網站目前的網址）。
+- 舊版網站（`/v/…`）的預覽也指向正式網站的那張圖，不另外保存。
+
+## 列印（記分表、累計成績表、陣容卡）
+- 比賽頁標題列的「列印」→ 傳統記分表（A4 橫式，一隊一頁）；打擊頁、投球頁的「列印」→ 照目前篩選印一頁累計成績表（A4 直式）；先發陣容頁的「列印陣容卡」→ 先發名單（可一張印 2 份，中間虛線裁開）。
+- 列印頁上方按「列印／存成 PDF」：列印視窗裡選「另存為 PDF」就能存檔。手機若印成直的，請在列印設定選「橫向」。
+- 在 LINE 裡打開網站時，LINE 的瀏覽器可能叫不出列印：先點右上角 ⋯ →「用瀏覽器開啟」，再按列印。
+- 深色模式印出來也是白紙黑字；側邊欄、上方列不會印出來。
+
 ## 把 GitHub repo 改成私人（不公開）
 1. GitHub → repo → **Settings** → 最下面 **Danger Zone** → **Change repository visibility** → **Make private**。
 2. 網站本身（Cloudflare）照常更新，不用改。
