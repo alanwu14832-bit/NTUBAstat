@@ -89,11 +89,11 @@ describe('公版 Excel keeps up with the website', () => {
   }, 30000)
   it('an empty 報名名單 sheet imports as no lists', () => {
     expect(parseWorkbook(arrayBuf(templateBuf())).registrations).toEqual([])
-  })
+  }, 30000)   // (parses the whole template: over 5 s when the machine is busy)
   it('is blank: no games, players or sample names', () => {
     const { dataset } = parseWorkbook(arrayBuf(templateBuf()))
     expect(dataset).toEqual(EMPTY_DATASET)
-  })
+  }, 30000)
 })
 
 describe('報名名單 in Excel', () => {
