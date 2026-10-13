@@ -25,6 +25,7 @@
 Claude 會在 `supabase/migrations/` 多一個檔案並告訴你。到 Supabase → **SQL Editor** 貼上那個檔案執行一次。執行前網站照常可用，只是新功能的資料存不進雲端（網站會提示）。
 
 - `supabase/migrations/2026-10-14_record_fields.sql`：**比賽結束時間、對方投手**。在 `games` 加 `end_time`（結束時間；開賽時間沿用 `time`，比賽時間由兩者算出），在 `batting_pa` 加 `opp_pitcher`（對方投手姓名，選填）、`opp_hand`（L 左投／R 右投），並把 `save_games()` 更新成也存結束時間。沒執行時網站照常運作：結束時間和對方投手只是不會存進雲端，紀錄比賽頁不會問對方投手、會在上方提醒，存檔時也會提醒。重複執行也安全。**系隊、校隊兩個 Supabase 專案都要各執行一次**：Supabase → 選專案 → 左側「SQL Editor」→「New query」→ 貼上整個檔案 →「Run」。
+- `supabase/migrations/2026-10-15_opp_runner.sql`：**對方代跑**。在 `pitching_pa` 加 `runner`（對方代跑的姓名或背號，選填，最多 40 字），記在那位跑者上壘的那一列。`save_games()` 本來就整列照存，不用改。沒執行時網站照常運作：紀錄時一樣可以記對方代跑，只是不會存進雲端，存檔時會提醒「對方代跑沒有存進雲端」。重複執行也安全。**系隊、校隊兩個 Supabase 專案都要各執行一次**：Supabase → 選專案 → 左側「SQL Editor」→「New query」→ 貼上整個檔案 →「Run」。
 
 ### 想要系隊版的新功能
 
