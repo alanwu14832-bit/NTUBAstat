@@ -1,0 +1,18 @@
+{
+  "name": "國立臺灣大學棒球隊",
+  "short_name": "NTUBT",
+  "lang": "zh-TW",
+  "start_url": "/v/20261008-1520-3c16451/",
+  "scope": "/v/20261008-1520-3c16451/",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#f5f5f7",
+  "icons": [
+    {
+      "src": "/v/20261008-1520-3c16451/mark.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
