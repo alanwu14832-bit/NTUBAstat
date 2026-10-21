@@ -49,6 +49,10 @@ A database change needs a migration in both repos, and the user must run it in b
   `edit1.mjs` (修改資料) and `excel.mjs` (匯出／匯入, 單場模板, the LibreOffice-recalculated 總表 against the site).
 - `web/src/data/broadcast.ts` is the text of /live and the game page's 文字轉播 tab (CPBL-style sentences, runner names from
   `record/timeline.ts`); `bafinstat/tools/gamesim/live.mjs` checks it in the browser (run it there after changes to /live).
+- 隊內賽 (`web/src/data/intrasquad.ts`): stored once, from one side (`dayRoster.intra` holds the other side's name, lineup
+  and subs; its batters/pitchers are named on the rows). The other side's view is made when the data is read
+  (`withMirrors`, id + `~2`) and never saved; `Filters.intra` decides whether stats count them (default: not), and team
+  records never do. `bafinstat/tools/gamesim/intra.mjs` records one through the real screen.
 - Games are written by the `save_games()` RPC, one transaction per batch (`supabase/migrations/2026-10-13_save_games.sql`);
   `pushCloudDataset` queues saves per device and falls back to piecewise writes before that migration. The record page
   syncs every change (record_drafts each time, the game rows only when they changed).
