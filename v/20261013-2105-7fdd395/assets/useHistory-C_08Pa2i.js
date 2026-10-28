@@ -1,0 +1,1 @@
+import{d as i}from"./history-BofE_Mp9.js";import{a as r,bw as n,cS as c}from"./index-DJhwz23m.js";let a=null;function u(t,e){return(!a||a.ds!==t||a.raw!==e)&&(a={ds:t,raw:e,h:i(t,c(e,t.pitching))}),a.h}function h(){const t=r(o=>o.base),e=r(o=>o.demo),s=r(o=>o.params);return u(n(t,e),s)}export{h as u};
