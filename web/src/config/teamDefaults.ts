@@ -56,6 +56,9 @@ export const TEAM_DEFAULTS = {
    *  one, e.g. https://x.github.io/bafinstat), so link previews (LINE, Facebook…) get an absolute picture URL. A build
    *  whose base path differs from it keeps a relative picture. Set it after moving to your own domain. */
   siteUrl: 'https://ntubtstat.mbaw.workers.dev',
+  /** VITE_TEAM_QUAL_RULE (team / college): the 排行門檻 a leaderboard opens with — 隊內 (PA ≥ 1) or 大專規程 (PA ≥
+   *  2.1 × 球隊場數, IP ≥ 1 × 場數; data/qualify.ts). The viewer can still switch. */
+  qualRule: 'college' as 'team' | 'college',
   /** VITE_TEAM_OG_IMAGE: the 1200×630 link-preview picture: a file in web/public or a full URL. Without the file the
    *  build uses the logo and a small preview card. */
   ogImage: 'og.png',
@@ -82,6 +85,7 @@ export function resolveTeam(env: Record<string, string | boolean | undefined>): 
   const tb = str('VITE_TEAM_TIEBREAK', '').toLowerCase()
   const tiebreak = ['2', '12', '123'].includes(tb) ? tb : ['0', 'off', 'false', 'no'].includes(tb) ? '' : TEAM_DEFAULTS.tiebreak
   const seasonStart = Number(str('VITE_TEAM_SEASON_START', ''))
+  const qual = str('VITE_TEAM_QUAL_RULE', '')
   return {
     name: str('VITE_TEAM_NAME', TEAM_DEFAULTS.name),
     org: str('VITE_TEAM_ORG', TEAM_DEFAULTS.org),
@@ -100,6 +104,7 @@ export function resolveTeam(env: Record<string, string | boolean | undefined>): 
     accentInkDark: color('VITE_TEAM_ACCENT_INK_DARK', TEAM_DEFAULTS.accentInkDark),
     pitchRest: TEAM_DEFAULTS.pitchRest,
     siteUrl: siteUrl(str('VITE_TEAM_SITE_URL', '')) ?? TEAM_DEFAULTS.siteUrl,
+    qualRule: qual === 'college' || qual === 'team' ? qual : TEAM_DEFAULTS.qualRule,
     ogImage: str('VITE_TEAM_OG_IMAGE', TEAM_DEFAULTS.ogImage),
     description: str('VITE_TEAM_DESCRIPTION', TEAM_DEFAULTS.description),
   }
