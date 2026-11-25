@@ -57,6 +57,7 @@ Cloudflare 現在建立網站預設是 Workers（以前叫 Pages），兩者都�
    選用：LINE、FB 貼網址時的連結預覽（圖和一句介紹）：
    - `VITE_TEAM_SITE_URL`：網站的完整網址（`https://` 開頭、結尾不要 `/`）。預設是 `web/src/config/teamDefaults.ts` 的 `siteUrl`（網站目前的網址），換網址或買了網域才要設。
    - `VITE_TEAM_OG_IMAGE`：預覽圖（1200×630），預設 `web/public/og.png`。
+   - `VITE_TEAM_HERO_PHOTO`：總覽頁開場形象區的球隊照片，預設 `web/public/hero.jpg`（沒有這個檔案就用畫出來的底圖）；手機用的直式裁切是 `VITE_TEAM_HERO_PHOTO_MOBILE`（預設 `hero-m.jpg`），`VITE_TEAM_HERO_FOCUS` 是裁切時保留的位置（例如 `50% 35%`）。
    - `VITE_TEAM_DESCRIPTION`：預覽下面的一句介紹；不填就自動寫「國立臺灣大學棒球隊（NTUBT）的比賽紀錄、即時比分與球員數據…」。
 
 5. **Deploy**（之後改設定要到 **Deployments** 按 **Retry build**）。約兩分鐘後得到網址 `https://ntubtstat.<你的帳號>.workers.dev`（目前是 `https://ntubtstat.mbaw.workers.dev`）。

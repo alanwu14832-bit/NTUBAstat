@@ -94,6 +94,7 @@ Claude 會在 `supabase/migrations/` 多一個檔案並告訴你。到 Supabase 
 - 在 LINE、Facebook、Messenger、Discord 貼本站任何網址，都會出現同一張預覽圖（`web/public/og.png`，深色記分板底、隊徽、隊名、網址）、標題「NTUBT Stats — 國立臺灣大學棒球隊數據平台」和一句介紹。網站畫面本身沒有任何變化。
 - **LINE、FB 會把預覽記住好幾天**：之前貼過的連結不會馬上換新圖。Facebook 可以到「分享偵錯工具」（developers.facebook.com/tools/debug）貼上網址 → 按「再次抓取」；LINE 通常幾天後自己更新。
 - **換了隊徽或隊名**：請 Claude「重新產生連結預覽圖」（它會跑 `tools/og/make-og.mjs`，產生新的 `web/public/og.png` 再上線）。
+- **總覽頁的球隊照片（開場形象區）**：把照片存成 `hero.jpg`（橫式，約 2000 × 1100，400 KB 以內），放進 `web/public/`（GitHub 網頁 → `web/public` 資料夾 → Add file → Upload files → Commit），或直接把照片傳給 Claude 請它放。手機想用另一張直式的，檔名用 `hero-m.jpg`（約 1100 × 1300）。沒有照片時，開場區會用隊徽和棒球縫線的底圖，網站照常運作。
 - **換了網址或買了網域**：照 [SETUP.md](SETUP.md) 第 3 步設 `VITE_TEAM_SITE_URL`。沒設的話預覽圖用 `web/src/config/teamDefaults.ts` 裡的 `siteUrl`（網站目前的網址）。
 - 舊版網站（`/v/…`）的預覽也指向正式網站的那張圖，不另外保存。
 
