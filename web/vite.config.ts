@@ -29,8 +29,12 @@ function teamSite(): Plugin {
     // A build-time constant, so the site (which starts empty) does not ship the sample games in src/data/seed at
     // all — not just hidden. The tests always get them: they are the fixtures. src/data/seed.ts reads it.
     config(_, { mode }) {
-      const seed = mode === 'test' || resolveTeam(loadEnv(mode, process.cwd(), 'VITE_')).seed
-      return { define: { __TEAM_SEED__: JSON.stringify(seed) } }
+      const t = resolveTeam(loadEnv(mode, process.cwd(), 'VITE_'))
+      const seed = mode === 'test' || t.seed
+      // 開場形象區: the team photo only when it is really there (a full URL, or a file in web/public); src/config/hero.ts reads it
+      const there = (f: string) => (/^https?:/.test(f) || (!!f && existsSync(resolve(process.cwd(), 'public', f))) ? f : '')
+      const hero = { photo: mode === 'test' ? '' : there(t.heroPhoto), mobile: mode === 'test' ? '' : there(t.heroPhotoMobile) }
+      return { define: { __TEAM_SEED__: JSON.stringify(seed), __TEAM_HERO__: JSON.stringify(hero) } }
     },
     configResolved(config) {
       const env = loadEnv(config.mode, config.envDir || process.cwd(), 'VITE_')
