@@ -5,11 +5,14 @@
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as XLSX from 'xlsx'
 import { datasetToWorkbook, parseWorkbook } from './xlsx'
 import { SEED_DATASET } from './seed'
 import { EMPTY_DATASET, type Registration } from './types'
+
+// (these read the 5 MB sample workbook: on a busy CI runner that can take longer than the default 5 s)
+vi.setConfig({ testTimeout: 30_000 })
 
 const templateBuf = () => readFileSync(resolve(process.cwd(), '..', 'data', '棒球數據總表.xlsx'))
 /** The same workbook built with BaFiN's sample games filled in (python3 tools/build_workbook.py): a worked 單場 example. */
