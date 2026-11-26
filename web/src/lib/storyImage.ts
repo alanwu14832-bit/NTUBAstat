@@ -18,7 +18,6 @@ export const SAFE_TOP = 250, SAFE_BOTTOM = 340
 /** the photo's frame in 上照片下數據 (the top of the card; it fades into the board below) */
 const PHOTO_H = 1040
 const PAD = 72
-const SERIF = '"Noto Serif TC", "Source Serif 4", "Songti TC", "PMingLiU", serif'
 
 /** Where the reader put the photo: fx / fy = which part shows (0 = left / top edge, 1 = right / bottom), zoom ≥ 1. */
 export interface PhotoView { fx: number; fy: number; zoom: number }
@@ -51,12 +50,26 @@ export const LAYERS: Array<{ key: LayerKey; label: string }> = [
   { key: 'header', label: '隊名與比分' }, { key: 'title', label: '對手與日期' }, { key: 'name', label: '球員' },
   { key: 'big', label: '大數字' }, { key: 'small', label: '小數字' }, { key: 'headline', label: '亮點文字' }, { key: 'footer', label: '底部資訊' },
 ]
-export type FontKey = '' | 'sans' | 'serif' | 'figure'
-export const FONT_LABEL: Record<FontKey, string> = { '': '預設', sans: '黑體', serif: '明體', figure: '運動數字' }
-const FONTS: Record<Exclude<FontKey, ''>, string> = { sans: SANS, serif: SERIF, figure: FIG }
+/**
+ * One card, one typeface per script (the user's rule): every block is set in the same stack — the card's Latin face first
+ * (letters and figures), then its CJK face — so 英文數字 never mix two faces, nor 中文. '' = the card's own pair
+ * (運動數字 Barlow + 黑體).
+ */
+export type LatinFont = '' | 'figure' | 'sans' | 'serif'
+export type CjkFont = '' | 'sans' | 'serif'
+export const LATIN_LABEL: Record<LatinFont, string> = { '': '預設（運動數字）', figure: '運動數字', sans: '黑體', serif: '明體' }
+export const CJK_LABEL: Record<CjkFont, string> = { '': '預設（黑體）', sans: '黑體', serif: '明體' }
+// the Latin faces carry no generic fallback: one would catch the CJK characters before the CJK face does
+const LATIN: Record<Exclude<LatinFont, ''>, string> = { figure: '"Barlow Semi Condensed"', sans: '"Inter", "SF Pro Display", "Helvetica Neue", Arial', serif: '"Source Serif 4", Georgia' }
+const CJK: Record<Exclude<CjkFont, ''>, string> = { sans: '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei"', serif: '"Noto Serif TC", "Songti TC", "PMingLiU"' }
+/** The card's one font stack. */
+export function cardFace(st: Pick<StoryStyle, 'fonts'>): { stack: string; latin: Exclude<LatinFont, ''>; cjk: Exclude<CjkFont, ''> } {
+  const latin = st.fonts?.latin || 'figure', cjk = st.fonts?.cjk || 'sans'
+  return { stack: `${LATIN[latin]}, ${CJK[cjk]}, ${cjk === 'sans' ? 'sans-serif' : 'serif'}`, latin, cjk }
+}
 
 /** One block of text: shown or not, its size (× the designed size), colour ('' = the card's text colour), typeface ('' = its own), and how far it was moved. */
-export interface TextStyle { show: boolean; scale: number; color: string; font: FontKey; dx: number; dy: number }
+export interface TextStyle { show: boolean; scale: number; color: string; dx: number; dy: number }
 /** The front photo: its centre on the card, its size (1 = a little over half the card's height), a white frame, a shadow. */
 export interface FgStyle { cx: number; cy: number; scale: number; frame: boolean; shadow: boolean }
 export interface StoryStyle {
@@ -69,12 +82,14 @@ export interface StoryStyle {
   text: Record<LayerKey, TextStyle>
   /** 圖層: the front photo and the blocks of text, bottom first (the background is always under them) */
   order: StoryTarget[]
+  /** the card's two faces (one for 英文數字, one for 中文) */
+  fonts: { latin: LatinFont; cjk: CjkFont }
 }
 export const SCALE_MIN = 0.6, SCALE_MAX = 1.8
 export const FG_SCALE_MIN = 0.3, FG_SCALE_MAX = 2.2
 const HEX = /^#[0-9a-f]{6}$/i
 const teamAccent = () => (HEX.test(TEAM.accentDark) ? TEAM.accentDark : '#e2a03a')
-const plainText = (): TextStyle => ({ show: true, scale: 1, color: '', font: '', dx: 0, dy: 0 })
+const plainText = (): TextStyle => ({ show: true, scale: 1, color: '', dx: 0, dy: 0 })
 export const DEFAULT_FG: FgStyle = { cx: 700, cy: 860, scale: 1, frame: false, shadow: true }
 
 export function defaultStyle(): StoryStyle {
@@ -82,6 +97,7 @@ export function defaultStyle(): StoryStyle {
     layout: 'full', accent: teamAccent(), ink: INK, shade: BG, dim: 0, blur: 0, fg: { ...DEFAULT_FG },
     text: Object.fromEntries(LAYERS.map((l) => [l.key, plainText()])) as Record<LayerKey, TextStyle>,
     order: defaultOrder(),
+    fonts: { latin: '', cjk: '' },
   }
 }
 
@@ -115,10 +131,10 @@ export function readStyle(raw: unknown): StoryStyle {
     },
     text: Object.fromEntries(LAYERS.map(({ key }) => {
       const t = tx[key] ?? {}
-      const font = t.font === 'sans' || t.font === 'serif' || t.font === 'figure' ? t.font : ''
-      return [key, { show: t.show !== false, scale: num(t.scale, SCALE_MIN, SCALE_MAX, 1), color: typeof t.color === 'string' && HEX.test(t.color) ? t.color : '', font, dx: num(t.dx, -STORY_W, STORY_W, 0), dy: num(t.dy, -STORY_H, STORY_H, 0) }]
+      return [key, { show: t.show !== false, scale: num(t.scale, SCALE_MIN, SCALE_MAX, 1), color: typeof t.color === 'string' && HEX.test(t.color) ? t.color : '', dx: num(t.dx, -STORY_W, STORY_W, 0), dy: num(t.dy, -STORY_H, STORY_H, 0) }]
     })) as Record<LayerKey, TextStyle>,
     order: readOrder(r.order),
+    fonts: (() => { const f = (r.fonts ?? {}) as { latin?: unknown; cjk?: unknown }; return { latin: (Object.keys(LATIN_LABEL) as LatinFont[]).includes(f.latin as LatinFont) ? (f.latin as LatinFont) : '', cjk: (Object.keys(CJK_LABEL) as CjkFont[]).includes(f.cjk as CjkFont) ? (f.cjk as CjkFont) : '' } })(),
   }
 }
 
@@ -210,6 +226,8 @@ export function drawStory(c: HTMLCanvasElement, card: StoryCard, opts: StoryDraw
   const g = c.getContext('2d')
   if (!g) return null
   const st = opts.style ?? defaultStyle()
+  // one stack for every word on the card (cardFace)
+  const F = cardFace(st).stack
   const W = STORY_W, H = STORY_H, acc = st.accent, shade = st.shade, light = isLight(shade)
   const layout: StoryLayout = opts.photo && st.layout !== 'plain' ? st.layout : 'plain'
   const overPhoto = layout !== 'plain'
@@ -245,7 +263,7 @@ export function drawStory(c: HTMLCanvasElement, card: StoryCard, opts: StoryDraw
       // no photo at all: the jersey number (or the family name) fills the frame
       const big = card.number ?? card.name.slice(0, 1)
       g.save(); g.globalAlpha = 0.2
-      text(g, big, W / 2, 860, card.number ? 620 : 480, acc, { align: 'center', font: card.number ? FIG : SANS, weight: 800, max: W - 120 })
+      text(g, big, W / 2, 860, card.number ? 620 : 480, acc, { align: 'center', font: F, weight: 800, max: W - 120 })
       g.restore()
     }
   }
@@ -278,7 +296,7 @@ export function drawStory(c: HTMLCanvasElement, card: StoryCard, opts: StoryDraw
     g.save()
     g.translate(natural.x + t.dx, natural.y + t.dy); g.scale(s, s); g.translate(-natural.x, -natural.y)
     if (shadowed && isLight(ink)) { g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 14 }
-    draw(ink, alpha(ink, 0.62), (own) => (t.font ? FONTS[t.font] : own))
+    draw(ink, alpha(ink, 0.62), () => F)
     g.restore()
     boxes[key] = placeBox(natural, t)
   } })
