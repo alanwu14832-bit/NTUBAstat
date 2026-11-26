@@ -126,7 +126,10 @@ A database change needs a migration in both repos, and the user must run it in b
   side (`Reveal x`). All of it is still under reduced motion.
 - Games are written by the `save_games()` RPC, one transaction per batch (`supabase/migrations/2026-10-13_save_games.sql`);
   `pushCloudDataset` queues saves per device and falls back to piecewise writes before that migration. The record page
-  syncs every change (record_drafts each time, the game rows only when they changed).
+  syncs every change (record_drafts each time, the game rows only when they changed). Before writing the rows it reads the
+  game back (`fetchCloudGame`) and takes in what another device changed since its own last save (`record/outsideEdits`, a
+  field-by-field three-way merge against the copy read right after that save; flow changes the live game cannot follow are
+  left out and the recorder is told): a 球速 typed in 修改資料 on a second device mid-game used to be written over (2026-11-26).
 - 網站版本: `auto-deploy.yml` builds each live version as a read-only copy (VITE_ARCHIVE_ID, base /v/<id>/) into the
   `site-archive` branch (last 30); `web/scripts/archive.mjs` (postbuild) serves them at /v/<id>/; `public/boot.js` hands
   deep links into a copy over to it. Archived copies never sign in (config/archive.ts).
