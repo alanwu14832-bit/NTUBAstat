@@ -11,9 +11,9 @@ import { TEAM_NAME } from '../../data/seed'
 import { opponentLabel } from '../../data/intrasquad'
 import { STORY_KIND_LABEL, storyCard, storyFileName, storyGames, storyPlayers, type StoryKind, type StorySource } from '../../data/storyCard'
 import {
-  canShareFile, canvasBlob, DEFAULT_FG, DEFAULT_VIEW, defaultStyle, downloadBlob, drawStory, FG_SCALE_MAX, FG_SCALE_MIN, FONT_LABEL, frameHeight,
+  canShareFile, canvasBlob, DEFAULT_FG, DEFAULT_VIEW, defaultStyle, downloadBlob, drawStory, FG_SCALE_MAX, FG_SCALE_MIN, CJK_LABEL, LATIN_LABEL, frameHeight,
   defaultOrder, hitTest, LAYERS, LAYOUT_LABEL, moveLayer, readOrder, loadImage, loadPhoto, palettes, panView, readStyle, SCALE_MAX, SCALE_MIN, shareBlob, STORY_H, STORY_W,
-  type FgStyle, type FontKey, type LayerKey, type PhotoView, type StoryBoxes, type StoryLayout, type StoryStyle, type StoryTarget, type TextStyle,
+  type CjkFont, type FgStyle, type LatinFont, type LayerKey, type PhotoView, type StoryBoxes, type StoryLayout, type StoryStyle, type StoryTarget, type TextStyle,
 } from '../../lib/storyImage'
 import { cx } from '../../lib/format'
 import { canCutout, cutWith, removeBackground, type CutoutProgress } from '../../lib/cutout'
@@ -284,6 +284,12 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
 
               {panel === 'text' && (
                 <div className="flex flex-col gap-4">
+                  <Group title="整張的字型" note="同一種語言整張只用一種字型：中文一種、英文和數字一種。">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Select label="中文" aria-label="中文字型" value={style.fonts.cjk} onChange={(e) => setStyle((st) => ({ ...st, fonts: { ...st.fonts, cjk: e.target.value as CjkFont } }))} options={(Object.keys(CJK_LABEL) as CjkFont[]).map((f) => ({ value: f, label: CJK_LABEL[f] }))} />
+                      <Select label="英文數字" aria-label="英文數字字型" value={style.fonts.latin} onChange={(e) => setStyle((st) => ({ ...st, fonts: { ...st.fonts, latin: e.target.value as LatinFont } }))} options={(Object.keys(LATIN_LABEL) as LatinFont[]).map((f) => ({ value: f, label: LATIN_LABEL[f] }))} />
+                    </div>
+                  </Group>
                   <Field label="要調整的文字">
                     <div className="flex flex-wrap gap-1.5">
                       {LAYERS.map((l) => <Chip key={l.key} on={layer === l.key} dim={!style.text[l.key].show} onClick={() => { setLayer(l.key); setSelected(l.key) }}>{l.label}</Chip>)}
@@ -304,7 +310,6 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
                         </label>
                       </div>
                     </Field>
-                    <Select label="字型" aria-label="字型" value={t.font} onChange={(e) => setText(layer, { font: e.target.value as FontKey })} options={(Object.keys(FONT_LABEL) as FontKey[]).map((f) => ({ value: f, label: FONT_LABEL[f] }))} />
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="ghost" icon={<Crosshair />} onClick={() => setText(layer, { dx: 0, dy: 0 })}>位置還原</Button>
                       <Button size="sm" variant="ghost" icon={<RotateCcw />} onClick={() => setText(layer, defaultStyle().text[layer])}>這段還原</Button>

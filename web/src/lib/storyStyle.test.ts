@@ -1,4 +1,4 @@
-import { type StoryTarget, defaultOrder, moveLayer, readOrder, defaultStyle, fgRect, frameHeight, hitTest, placeBox, readStyle, STORY_H, STORY_W, panView, photoRect, DEFAULT_VIEW } from './storyImage'
+import { type StoryTarget, cardFace, defaultOrder, moveLayer, readOrder, defaultStyle, fgRect, frameHeight, hitTest, placeBox, readStyle, STORY_H, STORY_W, panView, photoRect, DEFAULT_VIEW } from './storyImage'
 
 describe('限時動態的版面設定', () => {
   it('reads a stored look back, keeping what is valid and defaulting the rest', () => {
@@ -11,12 +11,13 @@ describe('限時動態的版面設定', () => {
     expect(r.ink).toBe(d.ink)                    // not a #rrggbb colour
     expect(r.dim).toBe(0.8); expect(r.blur).toBe(0)
     expect(r.fg).toMatchObject({ scale: 2.2, frame: true, shadow: true })
-    expect(r.text.big).toEqual({ show: false, scale: 0.6, color: '#00ff00', font: 'serif', dx: 40, dy: 0 })
-    expect(r.text.title.font).toBe('')
+    expect(r.text.big).toEqual({ show: false, scale: 0.6, color: '#00ff00', dx: 40, dy: 0 })   // a block no longer has its own face
+    expect(r.fonts).toEqual({ latin: '', cjk: '' })
+    expect(readStyle({ fonts: { latin: 'serif', cjk: 'comic' } }).fonts).toEqual({ latin: 'serif', cjk: '' })
     expect(r.text.headline).toEqual(d.text.headline)
   })
   it('places a block from its top-left corner and finds what is under a point', () => {
-    const b = placeBox({ x: 72, y: 1000, w: 900, h: 100 }, { show: true, scale: 1.5, color: '', font: '', dx: 10, dy: -20 })
+    const b = placeBox({ x: 72, y: 1000, w: 900, h: 100 }, { show: true, scale: 1.5, color: '', dx: 10, dy: -20 })
     expect(b).toEqual({ x: 82, y: 980, w: 1350, h: 150 })
     const boxes = { fg: { x: 400, y: 400, w: 500, h: 900 }, name: { x: 72, y: 870, w: 936, h: 166 }, headline: { x: 72, y: 1400, w: 936, h: 100 } }
     expect(hitTest(boxes, 500, 900)).toBe('name')     // text sits over the front photo
@@ -49,5 +50,12 @@ describe('限時動態的版面設定', () => {
     const boxes = { fg: { x: 0, y: 0, w: 500, h: 500 }, name: { x: 100, y: 100, w: 100, h: 100 } }
     expect(hitTest(boxes, 150, 150)).toBe('name')
     expect(hitTest(boxes, 150, 150, up)).toBe('fg')
+  })
+  it('one face per script on the whole card: Barlow + 黑體 unless the reader picked others', () => {
+    const f = cardFace(defaultStyle())
+    expect(f).toMatchObject({ latin: 'figure', cjk: 'sans' })
+    expect(f.stack.indexOf('Barlow')).toBeLessThan(f.stack.indexOf('PingFang'))   // the Latin face first, no generic in between
+    expect(f.stack).not.toMatch(/system-ui/)
+    expect(cardFace({ fonts: { latin: 'serif', cjk: 'serif' } })).toMatchObject({ latin: 'serif', cjk: 'serif' })
   })
 })

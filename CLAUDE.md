@@ -80,7 +80,9 @@ A database change needs a migration in both repos, and the user must run it in b
   Planned: step 2 a server-side Claude call for the sentence (key never in the site), step 3 里程碑 and 全隊賽後總結 cards.
 - 限時動態編輯器 (2026-11-26, the user's ask: a small design desk): `StoryStyle` in lib/storyImage.ts — 版型 滿版照片／上照片下數據／純數據,
   a background photo (pan, zoom, 變暗, 模糊) and a front photo (`fg`: moved, sized, 白框, 陰影), the colours (主色／文字色／底色, `palettes()`),
-  and each block of text (`LAYERS`: shown, size, colour, 字型, moved). drawStory returns the blocks' boxes (`hitTest`) so the preview
+  and each block of text (`LAYERS`: shown, size, colour, moved). One face per script on a card (the user's rule, 2026-11-26): every
+  word is set in one stack, `cardFace` — the card's Latin face then its CJK face (`style.fonts`, '' = Barlow + 黑體); blocks have no
+  face of their own. drawStory returns the blocks' boxes (`hitTest`) so the preview
   picks and drags them; `guides` draws the picked frame only while editing (IG's covered bands were taken out at the user's ask:
   the layout still keeps its text inside SAFE_TOP / SAFE_BOTTOM). 圖層 (`style.order`, `moveLayer`): the front photo and the
   blocks are queued and drawn in the reader's order over the background, and `hitTest` picks by it. The look is kept on the device
