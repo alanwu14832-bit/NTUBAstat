@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { Crosshair, Download, ImagePlus, RotateCcw, Share2, Trash2, Wand2 } from 'lucide-react'
+import { ChevronDown, ChevronsDown, ChevronsUp, ChevronUp, Crosshair, Download, ImagePlus, RotateCcw, Share2, Trash2, Wand2 } from 'lucide-react'
 import { Sheet } from './Sheet'
 import { Button } from './Button'
 import { Select } from './Select'
@@ -12,19 +12,20 @@ import { opponentLabel } from '../../data/intrasquad'
 import { STORY_KIND_LABEL, storyCard, storyFileName, storyGames, storyPlayers, type StoryKind, type StorySource } from '../../data/storyCard'
 import {
   canShareFile, canvasBlob, DEFAULT_FG, DEFAULT_VIEW, defaultStyle, downloadBlob, drawStory, FG_SCALE_MAX, FG_SCALE_MIN, FONT_LABEL, frameHeight,
-  hitTest, LAYERS, LAYOUT_LABEL, loadImage, loadPhoto, palettes, panView, readStyle, SCALE_MAX, SCALE_MIN, shareBlob, STORY_H, STORY_W,
+  defaultOrder, hitTest, LAYERS, LAYOUT_LABEL, moveLayer, readOrder, loadImage, loadPhoto, palettes, panView, readStyle, SCALE_MAX, SCALE_MIN, shareBlob, STORY_H, STORY_W,
   type FgStyle, type FontKey, type LayerKey, type PhotoView, type StoryBoxes, type StoryLayout, type StoryStyle, type StoryTarget, type TextStyle,
 } from '../../lib/storyImage'
 import { cx } from '../../lib/format'
-import { canCutout, removeBackground, type CutoutProgress } from '../../lib/cutout'
+import { canCutout, cutWith, removeBackground, type CutoutProgress } from '../../lib/cutout'
+import { CutoutRefine } from './CutoutRefine'
 
 const KINDS: StoryKind[] = ['game-bat', 'game-pit', 'season-bat', 'season-pit']
 const HEADLINE_MAX = 44
 /** the reader's look for the card, kept on this device (never the photos) */
 const STYLE_KEY = 'bafin.story.style.v1'
 type Photo = Awaited<ReturnType<typeof loadPhoto>>
-type Panel = 'content' | 'photo' | 'text' | 'color'
-const PANELS: Array<{ value: Panel; label: string }> = [{ value: 'content', label: '內容' }, { value: 'photo', label: '照片' }, { value: 'text', label: '文字' }, { value: 'color', label: '配色' }]
+type Panel = 'content' | 'photo' | 'text' | 'layers' | 'color'
+const PANELS: Array<{ value: Panel; label: string }> = [{ value: 'content', label: '內容' }, { value: 'photo', label: '照片' }, { value: 'text', label: '文字' }, { value: 'layers', label: '圖層' }, { value: 'color', label: '配色' }]
 const LAYOUTS: StoryLayout[] = ['full', 'split', 'plain']
 
 function loadStyle(): StoryStyle {
@@ -72,6 +73,9 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
   const [fg, setFg] = useState<Photo | null>(null)
   // 自動去背: the cut-out of the front photo, whether it is used, and the run in progress
   const [fgCut, setFgCut] = useState<HTMLCanvasElement | null>(null)
+  // the mask the cut-out was made with (手動修邊 paints on it), and whether 手動修邊 is open
+  const [fgMask, setFgMask] = useState<HTMLCanvasElement | null>(null)
+  const [refining, setRefining] = useState(false)
   const [useCut, setUseCut] = useState(true)
   const [cutting, setCutting] = useState<CutoutProgress | null>(null)
   const [cutNote, setCutNote] = useState('')
@@ -81,6 +85,7 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
   const [selected, setSelected] = useState<StoryTarget | null>(null)
   const [layer, setLayer] = useState<LayerKey>('headline')
   const [fonts, setFonts] = useState(0)
+  const [present, setPresent] = useState<StoryTarget[]>([])
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const canvas = useRef<HTMLCanvasElement>(null)
@@ -106,6 +111,9 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
   useEffect(() => {
     if (!open || !card || !canvas.current) return
     boxes.current = drawStory(canvas.current, card, { ...drawOpts, guides: true, selected }) ?? {}
+    // what is on the card now (the 圖層 list shows these)
+    const on = (Object.keys(boxes.current) as StoryTarget[]).sort().join(',')
+    setPresent((was) => (was.join(',') === on ? was : (on ? on.split(',') as StoryTarget[] : [])))
   }, [open, card, drawOpts, selected, fonts])
 
   const setText = (key: LayerKey, patch: Partial<TextStyle>) => setStyle((st) => ({ ...st, text: { ...st.text, [key]: { ...st.text[key], ...patch } } }))
@@ -116,7 +124,7 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
     try {
       const p = await loadPhoto(f)
       if (which === 'bg') { setPhoto(p); setView(DEFAULT_VIEW); if (style.layout === 'plain') setStyle((st) => ({ ...st, layout: 'full' })) }
-      else { cutRun.current++; setFg(p); setFgCut(null); setCutting(null); setCutNote(''); setSelected('fg') }
+      else { cutRun.current++; setFg(p); setFgCut(null); setFgMask(null); setRefining(false); setCutting(null); setCutNote(''); setSelected('fg') }
     } catch { setNote('這張照片讀不出來，換一張試試（建議 JPG 或 PNG）。') }
   }
 
@@ -127,7 +135,7 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
   }
   const down = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     const p = at(e)
-    const hit = hitTest(boxes.current, p.x, p.y)
+    const hit = hitTest(boxes.current, p.x, p.y, style.order)
     const target = hit ?? (photo && style.layout !== 'plain' ? 'bg' : null)
     if (hit) { setSelected(hit); if (hit === 'fg') setPanel('photo'); else { setLayer(hit); setPanel('text') } }
     else setSelected(null)
@@ -170,7 +178,7 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
     try {
       const c = await removeBackground(fg, (p) => { if (cutRun.current === run) setCutting(p) })
       if (cutRun.current !== run) return
-      setFgCut(c); setUseCut(true); setCutNote('去背完成。不滿意可以取消勾選「使用去背」換回原圖。')
+      setFgCut(c.cut); setFgMask(c.mask); setUseCut(true); setCutNote('去背完成。還有沒去乾淨或被去掉的地方，按「手動修邊」塗一下；也可以取消勾選「使用去背」換回原圖。')
     } catch (e) {
       if (cutRun.current === run) setCutNote(`去背沒有成功：${e instanceof Error ? e.message : '不明原因'}。可以換一張主體清楚的照片再試。`)
     } finally { if (cutRun.current === run) setCutting(null) }
@@ -195,7 +203,7 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
                 onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
                 className="w-[230px] sm:w-[320px] aspect-[9/16] rounded-[14px] shadow-[var(--shadow-card)] select-none"
                 style={{ background: style.shade, touchAction: 'none', cursor: drag.current ? 'grabbing' : 'grab' }} />
-              <p className="text-[11.5px] text-muted text-center max-w-[320px]">{hint}。虛線外是 IG 會蓋住的地方，下載的圖不會有虛線。</p>
+              <p className="text-[11.5px] text-muted text-center max-w-[320px]">{hint}。</p>
             </div>
             <div className="min-w-0 flex-1 flex flex-col gap-3.5">
               <Tabs aria-label="編輯" items={PANELS} value={panel} onChange={setPanel} />
@@ -241,14 +249,24 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
                     <div className="flex flex-wrap items-center gap-2">
                       <Button size="sm" variant="outline" icon={<ImagePlus />} onClick={() => fgFile.current?.click()}>{fg ? '換一張' : '選照片'}</Button>
                       {fg && <Button size="sm" variant="ghost" icon={<Crosshair />} onClick={() => setFgStyle({ cx: DEFAULT_FG.cx, cy: DEFAULT_FG.cy })}>位置還原</Button>}
-                      {fg && <Button size="sm" variant="ghost" icon={<Trash2 />} onClick={() => { cutRun.current++; setFg(null); setFgCut(null); setCutting(null); setCutNote(''); setSelected(null) }}>拿掉</Button>}
+                      {fg && <Button size="sm" variant="ghost" icon={<Trash2 />} onClick={() => { cutRun.current++; setFg(null); setFgCut(null); setFgMask(null); setRefining(false); setCutting(null); setCutNote(''); setSelected(null) }}>拿掉</Button>}
                     </div>
                     {fg && canCutout() && (
                       <div className="flex flex-col gap-1.5">
                         <div className="flex flex-wrap items-center gap-3">
                           {!fgCut && <Button size="sm" variant="primary" icon={<Wand2 />} disabled={!!cutting} onClick={() => void cut()}>{cutting ? '去背中…' : '自動去背'}</Button>}
                           {fgCut && <Check label="使用去背" checked={useCut} onChange={setUseCut} />}
+                          {fgCut && fgMask && !refining && <Button size="sm" variant="outline" onClick={() => setRefining(true)}>手動修邊</Button>}
                         </div>
+                        {refining && fg && fgMask && (
+                          <CutoutRefine photo={fg} mask={fgMask} onCancel={() => setRefining(false)}
+                            onDone={(m) => {
+                              const c = cutWith(fg, m)
+                              setRefining(false)
+                              if (!c) { setCutNote('整張都擦掉了：按「取消」或用「補回」塗回來。'); return }
+                              setFgMask(m); setFgCut(c); setUseCut(true); setCutNote('修邊完成。')
+                            }} />
+                        )}
                         <p className="text-[11.5px] text-muted" role="status">{cuttingText || cutNote || '在這台裝置上計算，照片不會上傳。第一次要下載約 55 MB 的去背工具（建議用 Wi‑Fi），之後會快很多。'}</p>
                       </div>
                     )}
@@ -293,6 +311,29 @@ export function StoryDialog({ open, onClose, player, gameId }: StoryDialogProps)
                     </div>
                   </Group>
                   <p className="text-[11.5px] text-muted">也可以直接在預覽圖上點文字選取，按住拖曳移動。</p>
+                </div>
+              )}
+
+              {panel === 'layers' && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-[12px] text-muted">上面的蓋住下面的。用箭頭調整先後，點名稱可以在預覽圖上選到它。</p>
+                  <ol className="flex flex-col rounded-[12px] border border-border divide-y divide-[var(--border)]" aria-label="圖層（上面的在最上層）">
+                    {[...readOrder(style.order).filter((x) => present.includes(x))].reverse().map((id, k, list) => {
+                      const label = id === 'fg' ? '前景照片' : LAYERS.find((l) => l.key === id)?.label ?? id
+                      const move = (dir: 'up' | 'down' | 'top' | 'bottom') => setStyle((st) => ({ ...st, order: moveLayer(readOrder(st.order), id, dir, present) }))
+                      return (
+                        <li key={id} className={cx('flex items-center gap-1 pl-3 pr-1 min-h-11', selected === id && 'bg-surface-2')}>
+                          <button type="button" onClick={() => { setSelected(id); if (id !== 'fg') setLayer(id as LayerKey) }} className="flex-1 min-w-0 text-left text-[13px] text-ink truncate cursor-pointer">{label}</button>
+                          <IconBtn label={`${label} 移到最上層`} disabled={k === 0} onClick={() => move('top')}><ChevronsUp className="size-4" /></IconBtn>
+                          <IconBtn label={`${label} 往上一層`} disabled={k === 0} onClick={() => move('up')}><ChevronUp className="size-4" /></IconBtn>
+                          <IconBtn label={`${label} 往下一層`} disabled={k === list.length - 1} onClick={() => move('down')}><ChevronDown className="size-4" /></IconBtn>
+                          <IconBtn label={`${label} 移到最下層`} disabled={k === list.length - 1} onClick={() => move('bottom')}><ChevronsDown className="size-4" /></IconBtn>
+                        </li>
+                      )
+                    })}
+                    <li className="pl-3 pr-3 min-h-11 flex items-center text-[13px] text-muted">背景（照片、底色；固定在最下面）</li>
+                  </ol>
+                  <Button size="sm" variant="ghost" icon={<RotateCcw />} className="self-start" onClick={() => setStyle((st) => ({ ...st, order: defaultOrder() }))}>回到預設順序</Button>
                 </div>
               )}
 
@@ -380,5 +421,13 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
         <span className="tnum text-ink-2 text-[12px] uppercase">{value}</span>
       </span>
     </label>
+  )
+}
+function IconBtn({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" aria-label={label} title={label} disabled={disabled} onClick={onClick}
+      className="size-10 pointer-fine:size-8 inline-flex items-center justify-center rounded-[8px] text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer disabled:opacity-30 disabled:cursor-default">
+      {children}
+    </button>
   )
 }

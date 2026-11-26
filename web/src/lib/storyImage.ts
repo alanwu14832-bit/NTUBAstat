@@ -67,6 +67,8 @@ export interface StoryStyle {
   dim: number; blur: number
   fg: FgStyle
   text: Record<LayerKey, TextStyle>
+  /** 圖層: the front photo and the blocks of text, bottom first (the background is always under them) */
+  order: StoryTarget[]
 }
 export const SCALE_MIN = 0.6, SCALE_MAX = 1.8
 export const FG_SCALE_MIN = 0.3, FG_SCALE_MAX = 2.2
@@ -79,6 +81,7 @@ export function defaultStyle(): StoryStyle {
   return {
     layout: 'full', accent: teamAccent(), ink: INK, shade: BG, dim: 0, blur: 0, fg: { ...DEFAULT_FG },
     text: Object.fromEntries(LAYERS.map((l) => [l.key, plainText()])) as Record<LayerKey, TextStyle>,
+    order: defaultOrder(),
   }
 }
 
@@ -115,6 +118,7 @@ export function readStyle(raw: unknown): StoryStyle {
       const font = t.font === 'sans' || t.font === 'serif' || t.font === 'figure' ? t.font : ''
       return [key, { show: t.show !== false, scale: num(t.scale, SCALE_MIN, SCALE_MAX, 1), color: typeof t.color === 'string' && HEX.test(t.color) ? t.color : '', font, dx: num(t.dx, -STORY_W, STORY_W, 0), dy: num(t.dy, -STORY_H, STORY_H, 0) }]
     })) as Record<LayerKey, TextStyle>,
+    order: readOrder(r.order),
   }
 }
 
@@ -123,6 +127,29 @@ export function readStyle(raw: unknown): StoryStyle {
 export interface Box { x: number; y: number; w: number; h: number }
 export type StoryTarget = LayerKey | 'fg'
 export type StoryBoxes = Partial<Record<StoryTarget, Box>>
+
+/** 圖層 to start from: the front photo at the bottom, the text over it. */
+export function defaultOrder(): StoryTarget[] { return ['fg', ...LAYERS.map((l) => l.key)] }
+/** A stored order: the known layers it names, in its order, then any it lacks at the top. */
+export function readOrder(raw: unknown): StoryTarget[] {
+  const all = defaultOrder()
+  const got = Array.isArray(raw) ? raw.filter((x, i, a): x is StoryTarget => all.includes(x as StoryTarget) && a.indexOf(x) === i) : []
+  return [...got, ...all.filter((x) => !got.includes(x))]
+}
+/**
+ * One layer moved among the ones on the card (`shown`, the others keep their places): 'up' / 'down' past its neighbour,
+ * 'top' / 'bottom' past all of them.
+ */
+export function moveLayer(order: StoryTarget[], id: StoryTarget, dir: 'up' | 'down' | 'top' | 'bottom', shown: StoryTarget[]): StoryTarget[] {
+  const on = order.filter((x) => shown.includes(x))
+  const at = on.indexOf(id)
+  if (at < 0) return order
+  const to = dir === 'up' ? Math.min(on.length - 1, at + 1) : dir === 'down' ? Math.max(0, at - 1) : dir === 'top' ? on.length - 1 : 0
+  if (to === at) return order
+  const next = on.slice(); next.splice(at, 1); next.splice(to, 0, id)
+  let k = 0
+  return order.map((x) => (shown.includes(x) ? next[k++] : x))
+}
 
 /** A block's box once the reader sized it (from its top-left corner) and moved it. */
 export function placeBox(natural: Box, t: TextStyle): Box {
@@ -135,10 +162,10 @@ export function fgRect(pw: number, ph: number, fg: FgStyle): Box {
   return { x: fg.cx - w / 2, y: fg.cy - h / 2, w, h }
 }
 const inside = (b: Box | undefined, x: number, y: number, pad = 12) => !!b && x >= b.x - pad && x <= b.x + b.w + pad && y >= b.y - pad && y <= b.y + b.h + pad
-/** What is under a point of the card: the topmost block of text, else the front photo, else nothing (the background). */
-export function hitTest(boxes: StoryBoxes, x: number, y: number): StoryTarget | null {
-  for (const { key } of [...LAYERS].reverse()) if (inside(boxes[key], x, y)) return key
-  return inside(boxes.fg, x, y, 0) ? 'fg' : null
+/** What is under a point of the card: the topmost layer in the reader's 圖層 order, else nothing (the background). */
+export function hitTest(boxes: StoryBoxes, x: number, y: number, order: StoryTarget[] = defaultOrder()): StoryTarget | null {
+  for (const id of [...readOrder(order)].reverse()) if (inside(boxes[id], x, y, id === 'fg' ? 0 : 12)) return id
+  return null
 }
 
 // ---------------------------------------------------------------- drawing
@@ -151,7 +178,7 @@ export interface StoryDraw {
   fg?: Photo | null
   mark?: Photo | null
   style?: StoryStyle
-  /** editing only: Instagram's covered bands and a frame round the picked block (never in the shared image) */
+  /** editing only: a frame round the picked block (never in the shared image) */
   guides?: boolean; selected?: StoryTarget | null
 }
 /** A #rrggbb colour at an opacity (anything else is returned as it is). */
@@ -223,9 +250,12 @@ export function drawStory(c: HTMLCanvasElement, card: StoryCard, opts: StoryDraw
     }
   }
 
-  // ---- the front photo (over the background and its fades, under the text)
-  if (opts.fg) {
-    const r = fgRect(opts.fg.width, opts.fg.height, st.fg)
+  // the layers (the front photo, the blocks of text) are queued, then drawn in the reader's 圖層 order over the background
+  const queue: Array<{ id: StoryTarget; run: () => void }> = []
+  // ---- the front photo
+  const fgImg = opts.fg
+  if (fgImg) queue.push({ id: 'fg', run: () => {
+    const r = fgRect(fgImg.width, fgImg.height, st.fg)
     boxes.fg = r
     g.save()
     if (st.fg.shadow) { g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 48; g.shadowOffsetY = 18 }
@@ -233,14 +263,14 @@ export function drawStory(c: HTMLCanvasElement, card: StoryCard, opts: StoryDraw
       const b = Math.max(10, Math.round(r.w * 0.025))
       g.fillStyle = '#ffffff'; chip(g, r.x - b, r.y - b, r.w + b * 2, r.h + b * 2, 22); g.fill()
       g.shadowColor = 'transparent'
-      g.save(); chip(g, r.x, r.y, r.w, r.h, 14); g.clip(); g.drawImage(opts.fg, r.x, r.y, r.w, r.h); g.restore()
-    } else g.drawImage(opts.fg, r.x, r.y, r.w, r.h)
+      g.save(); chip(g, r.x, r.y, r.w, r.h, 14); g.clip(); g.drawImage(fgImg, r.x, r.y, r.w, r.h); g.restore()
+    } else g.drawImage(fgImg, r.x, r.y, r.w, r.h)
     g.restore()
-  }
+  } })
 
   // ---- the blocks of text: each drawn at its designed place, then sized from its top-left corner and moved
   const shadowed = overPhoto || !!opts.fg
-  const block = (key: LayerKey, natural: Box, draw: (ink: string, muted: string, font: (own: string) => string) => void) => {
+  const block = (key: LayerKey, natural: Box, draw: (ink: string, muted: string, font: (own: string) => string) => void) => queue.push({ id: key, run: () => {
     const t = st.text[key]
     if (!t.show) return
     const s = clamp(t.scale, SCALE_MIN, SCALE_MAX)
@@ -251,7 +281,7 @@ export function drawStory(c: HTMLCanvasElement, card: StoryCard, opts: StoryDraw
     draw(ink, alpha(ink, 0.62), (own) => (t.font ? FONTS[t.font] : own))
     g.restore()
     boxes[key] = placeBox(natural, t)
-  }
+  } })
 
   block('header', { x: PAD, y: SAFE_TOP, w: W - PAD * 2, h: 64 }, (ink, _m, font) => {
     let tx = PAD
@@ -349,15 +379,13 @@ export function drawStory(c: HTMLCanvasElement, card: StoryCard, opts: StoryDraw
     if (card.footer) text(g, card.footer, PAD, bottom - 12, 26, muted, { weight: 500, max: W - PAD * 2 - siteW - 30, font: font(SANS) })
   })
 
-  // ---- editing aids (the shared image is drawn without them)
+  // ---- the layers, bottom first
+  const rank = new Map(readOrder(st.order).map((id, i) => [id, i]))
+  queue.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)).forEach((q) => q.run())
+
+  // ---- editing aid (the shared image is drawn without it): a frame round the picked block
   if (opts.guides) {
     g.save()
-    g.setLineDash([14, 12]); g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,0.55)'
-    g.beginPath(); g.moveTo(0, SAFE_TOP); g.lineTo(W, SAFE_TOP); g.moveTo(0, bottom); g.lineTo(W, bottom); g.stroke()
-    g.setLineDash([])
-    g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(0, 0, W, SAFE_TOP); g.fillRect(0, bottom, W, SAFE_BOTTOM)
-    text(g, 'IG 頭像列會蓋住這裡', W / 2, SAFE_TOP - 24, 30, 'rgba(255,255,255,0.75)', { align: 'center', weight: 500 })
-    text(g, 'IG 回覆列會蓋住這裡', W / 2, bottom + 54, 30, 'rgba(255,255,255,0.75)', { align: 'center', weight: 500 })
     const sel = opts.selected ? boxes[opts.selected] : undefined
     if (sel) {
       g.setLineDash([18, 10]); g.lineWidth = 5; g.strokeStyle = acc
