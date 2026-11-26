@@ -1,4 +1,4 @@
-import { defaultStyle, fgRect, frameHeight, hitTest, placeBox, readStyle, STORY_H, STORY_W, panView, photoRect, DEFAULT_VIEW } from './storyImage'
+import { type StoryTarget, defaultOrder, moveLayer, readOrder, defaultStyle, fgRect, frameHeight, hitTest, placeBox, readStyle, STORY_H, STORY_W, panView, photoRect, DEFAULT_VIEW } from './storyImage'
 
 describe('限時動態的版面設定', () => {
   it('reads a stored look back, keeping what is valid and defaulting the rest', () => {
@@ -36,5 +36,18 @@ describe('限時動態的版面設定', () => {
     expect(r.h).toBeCloseTo(STORY_H); expect(r.w).toBeGreaterThan(STORY_W)
     const moved = panView(DEFAULT_VIEW, 100000, 0, 1600, 1200, STORY_H)
     expect(moved.fx).toBe(0)
+  })
+  it('圖層: the reader\'s order, kept tidy, and moves among the layers on the card only', () => {
+    const d = defaultOrder()
+    expect(d[0]).toBe('fg')                                            // the photo under the text to start with
+    expect(readOrder(['name', 'fg', 'name', 'nonsense'])).toEqual(['name', 'fg', ...d.filter((x) => x !== 'name' && x !== 'fg')])
+    const shown: StoryTarget[] = ['fg', 'name', 'big']
+    const up = moveLayer(d, 'fg', 'top', shown)
+    expect(up.filter((x) => shown.includes(x))).toEqual(['name', 'big', 'fg'])
+    expect(up.filter((x) => !shown.includes(x))).toEqual(d.filter((x) => !shown.includes(x)))
+    expect(moveLayer(up, 'fg', 'down', shown).filter((x) => shown.includes(x))).toEqual(['name', 'fg', 'big'])
+    const boxes = { fg: { x: 0, y: 0, w: 500, h: 500 }, name: { x: 100, y: 100, w: 100, h: 100 } }
+    expect(hitTest(boxes, 150, 150)).toBe('name')
+    expect(hitTest(boxes, 150, 150, up)).toBe('fg')
   })
 })

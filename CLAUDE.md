@@ -81,10 +81,13 @@ A database change needs a migration in both repos, and the user must run it in b
 - 限時動態編輯器 (2026-11-26, the user's ask: a small design desk): `StoryStyle` in lib/storyImage.ts — 版型 滿版照片／上照片下數據／純數據,
   a background photo (pan, zoom, 變暗, 模糊) and a front photo (`fg`: moved, sized, 白框, 陰影), the colours (主色／文字色／底色, `palettes()`),
   and each block of text (`LAYERS`: shown, size, colour, 字型, moved). drawStory returns the blocks' boxes (`hitTest`) so the preview
-  picks and drags them; `guides` draws IG's covered bands and the picked frame only while editing. The look is kept on the device
+  picks and drags them; `guides` draws the picked frame only while editing (IG's covered bands were taken out at the user's ask:
+  the layout still keeps its text inside SAFE_TOP / SAFE_BOTTOM). 圖層 (`style.order`, `moveLayer`): the front photo and the
+  blocks are queued and drawn in the reader's order over the background, and `hitTest` picks by it. The look is kept on the device
   (`bafin.story.style.v1`, `readStyle` cleans it), the photos never. 自動去背 on the front photo (step 2, same day): `lib/cutout.ts`
   → module worker `lib/cutout.worker.ts` running IS-Net (MIT int8 build, Hugging Face pinned revision, ~44 MB, kept in Cache Storage
-  `bafin-cutout-v1`) on ONNX Runtime Web (`onnxruntime-web`, its WebAssembly from jsDelivr at the package.json version; never put
+  `bafin-cutout-v1`; `refineAlpha` then drops the haze, scraps not touching the subject and fills small holes, so a bat in his hand
+  stays; 手動修邊 `CutoutRefine` paints 擦掉／補回 on the kept mask and `cutWith` cuts again) on ONNX Runtime Web (`onnxruntime-web`, its WebAssembly from jsDelivr at the package.json version; never put
   the wasm or the model in public/: every Vercel deployment and archived version would carry them). `vite.config` worker format 'es'.
 - 複選篩選 (2026-11-25): `Filters.tournament / position / opponent / result` are lists (none = every game; a game passes holding any of
   the values; different filters still narrow together). `components/ui/MultiSelect.tsx` (desktop: checkbox list in a portal, fixed

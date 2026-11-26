@@ -46,6 +46,9 @@ describe('分享限時動態', () => {
     fireEvent.click(within(dlg).getByRole('button', { name: '大數字' }))
     fireEvent.click(within(dlg).getByLabelText('顯示'))
     expect(within(dlg).getByRole('button', { name: '大數字' })).toHaveClass('line-through')
+    fireEvent.click(within(dlg).getByRole('tab', { name: '圖層' }))
+    expect(within(dlg).getByText('背景（照片、底色；固定在最下面）')).toBeInTheDocument()
+    fireEvent.click(within(dlg).getByRole('tab', { name: '照片' }))
     // the look is kept on this device for the next card
     const saved = JSON.parse(localStorage.getItem('bafin.story.style.v1') ?? '{}')
     expect(saved.layout).toBe('plain')
