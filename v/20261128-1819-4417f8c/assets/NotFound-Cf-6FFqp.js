@@ -1,0 +1,1 @@
+import{j as t,B as o,eu as r}from"./index-B7L13kw6.js";import{E as i}from"./EmptyState-GqX337wW.js";import{C as a}from"./Card-DDZpqwAt.js";import"./InfoNote-Bq2jk4DP.js";function p(){return t.jsx(a,{children:t.jsx(i,{icon:t.jsx(r,{}),title:"三振出局：找不到這個頁面",description:"網址可能已變更或不存在。回本壘重新站上打擊區。",action:t.jsx(o,{variant:"primary",to:"/",children:"回到總覽"})})})}export{p as NotFoundPage};
