@@ -47,9 +47,9 @@ export const pitchToken = (p: string): string => PITCH_TOKEN[p] ?? p
 /** 「壞 好 界」 */
 export const pitchTokens = (pitches: string[]): string => pitches.map(pitchToken).join(' ')
 /** One row per pitch with the count after it (the pitch put in play keeps the count before it, the MLB way). */
-export function pitchList(pitches: string[], speeds?: Array<number | null>): Array<{ n: number; word: string; count: string; kmh?: number }> {
+export function pitchList(pitches: string[], speeds?: Array<number | null>): Array<{ n: number; code: string; word: string; count: string; kmh?: number }> {
   const sp = alignSpeeds(speeds, pitches.length)
-  return pitches.map((p, i) => ({ n: i + 1, word: PITCH_WORD[p] ?? p, count: countText(count(p === 'IP' ? pitches.slice(0, i) : pitches.slice(0, i + 1))), ...(sp?.[i] ? { kmh: sp[i]! } : {}) }))
+  return pitches.map((p, i) => ({ n: i + 1, code: p, word: PITCH_WORD[p] ?? p, count: countText(count(p === 'IP' ? pitches.slice(0, i) : pitches.slice(0, i + 1))), ...(sp?.[i] ? { kmh: sp[i]! } : {}) }))
 }
 /** The fastest pitch of a plate appearance, for its summary line: 「最快 138 公里」. */
 export function fastestText(speeds?: Array<number | null>): string {
@@ -63,6 +63,8 @@ const OUTFIELD = new Set([7, 8, 9, 78, 89])
 /** Where the ball went: outfield and its gaps as is (「左外野」「右中間」), the infield with 方向 (「游擊方向」「三游間方向」). */
 export const dirWord = (loc?: number): string => (!loc || !WHERE[loc] ? '' : OUTFIELD.has(loc) ? WHERE[loc] : `${WHERE[loc]}方向`)
 const TRAJ_WORD: Record<string, string> = { G: '滾地球', L: '平飛球', F: '高飛球', P: '內野高飛球', B: '觸擊' }
+/** 軌跡 in words for the batted-ball box (「滾地球」), '' when unknown */
+export const trajWord = (t?: string): string => (t && TRAJ_WORD[t]) || ''
 const FIELDER: Record<string, string> = { P: '投手', C: '捕手', '1B': '一壘手', '2B': '二壘手', '3B': '三壘手', SS: '游擊手', LF: '左外野手', CF: '中外野手', RF: '右外野手' }
 /** 「游擊手」; '?' or anything unknown is 「野手」. */
 export const fielderWord = (pos?: string): string => (pos && FIELDER[pos]) || '野手'
@@ -291,8 +293,10 @@ export interface FeedSource {
 export interface Score2 { away: number; home: number }
 export type FeedItem =
   | { kind: 'pa'; key: string; side: FeedSide; order?: number; who: string; /** (their batter) 左打 / 右打 when recorded */ bats?: string; text: string; meta: string
-      pitches: Array<{ n: number; word: string; count: string; /** 球速 when measured */ kmh?: number }>; plays: string[]; /** the same plays without 「第 n 球」, by when they happened (the expanded pitch list) */ moves: Array<{ at: number; text: string }>; pitcher: string
-      runs: number; score?: Score2; outs?: number; hr: boolean }
+      pitches: Array<{ n: number; /** the pitch's code (B, CS, SS, F, IP …): its colour */ code: string; word: string; count: string; /** 球速 when measured */ kmh?: number }>; plays: string[]; /** the same plays without 「第 n 球」, by when they happened (the expanded pitch list) */ moves: Array<{ at: number; text: string }>; pitcher: string
+      runs: number; score?: Score2; outs?: number; hr: boolean
+      /** a hit (the 安打 filter), the batter's RBI, and the batted ball as recorded (落點 code, 軌跡, 強度 強／中／弱): the small field when opened */
+      hit: boolean; rbi: number; ball?: { loc?: number; traj?: string; quality?: string } }
   | { kind: 'event'; key: string; side: FeedSide; text: string; at: number; runs: number; score?: Score2; outs?: number; /** a play of the plate appearance in progress (shown in its block) */ during?: boolean }
   | { kind: 'sub'; key: string; side: FeedSide; text: string }
   | { kind: 'placed'; key: string; side: FeedSide; text: string }
@@ -634,6 +638,7 @@ export function buildFeed(src: FeedSource): FeedHalf[] {
         text: `${resultText(r, side, { reached, hrNo })}${clauses.length ? `；${clauses.join('，')}` : ''}。`, meta: [meta, fast].filter(Boolean).join('・'),
         pitches: pitchList(r.pitches, r.speeds), plays: moves.map((m) => m.text), moves: moves.map((m) => ({ at: m.at, text: m.body })), pitcher: pitcherOf(r),
         runs: st ? runs : producedRuns(r), ...(st && runs > 0 ? { score: scoreNow() } : {}), ...(madeOuts > 0 ? { outs } : {}), hr: r.result === '全壘打',
+        hit: r.result in HIT_BASE_COUNT, rbi: r.rbi ?? 0, ...(r.loc || r.traj ? { ball: { ...(r.loc ? { loc: r.loc } : {}), ...(r.traj ? { traj: r.traj } : {}), ...(r.quality ? { quality: r.quality } : {}) } } : {}),
       })
       for (const e of later) { outs = (e as { outs: number }).outs; items.push(e) }
     }

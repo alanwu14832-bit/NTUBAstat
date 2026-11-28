@@ -53,15 +53,16 @@ describe('即時比分 board (batch 12)', () => {
     const head = screen.getAllByRole('columnheader')
     for (const k of ['R', 'H', 'E']) expect(head.find((h) => h.textContent === k)?.className).toContain('sticky')
     expect(screen.queryByText('SCORE')).toBeNull()
-    // label column: 投手 / 打者 / 本打席 / 壘上 / 下一棒, in that order, then 最新
-    const labels = ['投手', '打者', '本打席', '壘上', '下一棒', '最新'].map((l) => screen.getByText(l, { selector: 'span' }))
+    // the board ends on 最新; the 本打席 card under it (2026-11-28): 打者 / 投手, the pitches, then 壘上 / 下一棒
+    const labels = ['最新', '打者', '投手', '壘上', '下一棒'].map((l) => screen.getByText(l, { selector: 'span' }))
     for (let i = 1; i < labels.length; i++) expect(labels[i - 1].compareDocumentPosition(labels[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(valueOf('投手')).toBe('對方投手')
     expect(valueOf('壘上')).toBe('一壘 甲')
     expect(valueOf('下一棒')).toBe('3 丙・4 丁')
     expect(numOf('打者')).toBe('今日首打席')
-    // 本打席: one character per pitch, so 好 (called) and 空 (whiff) differ in words
-    expect(screen.getByLabelText('本打席 2 球').textContent).toBe('壞好')
+    // 本打席: every pitch in words with the count after it (好球 called, 揮棒落空 a whiff), 未測 without a speed
+    const pitches = within(screen.getByRole('table', { name: '本打席 2 球' })).getAllByRole('row').slice(1)
+    expect(pitches.map((r) => r.textContent)).toEqual(['1壞球1-0未測', '2好球1-1未測'])
     expect(valueOf('最新')).toBe('甲 擊出中外野平飛球，一壘安打。')
     // the game, once, at the bottom of the board; no 進行中 badge or description above it
     expect(screen.getByText('系際盃・台大棒球場')).toBeTruthy()

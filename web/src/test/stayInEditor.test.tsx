@@ -37,15 +37,14 @@ describe('即時比分: 球速', () => {
     writeDraft({ ...s, speedOn: { us: true }, speeds: [136, null, 129] })
     useDataStore.setState({ base: EMPTY_DATASET })
     render(<MemoryRouter><LivePage /></MemoryRouter>)
-    await screen.findByText('本打席')
-    const fast = screen.getAllByText('136').find((e) => e.getAttribute('aria-label') === '136 公里')!
-    expect(fast).toBeTruthy()
-    expect(screen.getByText('最快')).toBeTruthy()
-    const row = screen.getByText('本打席', { selector: 'span' }).parentElement!
-    expect(row.textContent).toContain('129km/h')       // the last pitch measured
-    expect(fast.getAttribute('style')).toContain('rgb(255, 90, 79)')   // 紅
-    const mid = within(row).getAllByText('129').find((e) => e.getAttribute('aria-label') === '129 公里')!
-    expect(mid.getAttribute('style')).toContain('rgb(246, 207, 62)')   // 黃
+    // (2026-11-28: the 本打席 card under the board lists every pitch with the count after it and its 球速)
+    const table = await screen.findByRole('table', { name: '本打席 3 球' })
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows.map((r) => r.textContent)).toEqual(['1好球0-1136 公里', '2壞球1-1未測', '3擊出界外球1-2129 公里'])
+    expect(within(rows[0]).getByText('136 公里').className).toContain('text-critical')   // 紅
+    expect(within(rows[2]).getByText('129 公里').className).toContain('text-warning')    // 黃
+    // the pitcher's fastest today, beside his line
+    expect(screen.getByText('投手', { selector: 'span' }).parentElement!.textContent).toContain('最快 136 公里')
   })
 })
 
